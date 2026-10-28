@@ -1,4 +1,4 @@
 portal_entorno: prod
 portal_color: "#15803d"
-portal_version: "1.0.0"
+portal_version: "1.1.0"
 portal_db_host: prod-db1
