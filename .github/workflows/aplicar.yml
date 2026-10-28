@@ -1,0 +1,56 @@
+name: Aplicar main
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "proyecto/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aplicar-main
+  cancel-in-progress: false
+
+jobs:
+  aplicar:
+    name: Aplicar lo que hay en main
+    runs-on: ubuntu-24.04
+    env:
+      ANSIBLE_FORCE_COLOR: "1"
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v7
+
+      - name: Preparar Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar Ansible y ansible-lint
+        run: pip install -r requirements.txt
+
+      - name: Levantar los nodos del runner
+        run: bash scripts/nodos.sh up
+
+      - name: Aplicar dev
+        working-directory: proyecto
+        run: make site ENTORNO=dev
+
+      - name: Aplicar pre
+        working-directory: proyecto
+        run: make site ENTORNO=pre
+
+      - name: Aplicar prod
+        working-directory: proyecto
+        run: make site ENTORNO=prod CONFIRMAR=si
+
+      - name: Comprobar que prod sirve la versión de Git
+        working-directory: proyecto
+        run: |
+          ESPERADA=$(sed -n 's/^portal_version: "\(.*\)"/\1/p' inventories/prod/group_vars/all.yml)
+          curl -s localhost:8080/estado.json
+          curl -s localhost:8080/estado.json | grep -q "\"version\": \"$ESPERADA\""
