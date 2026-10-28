@@ -1,4 +1,5 @@
 name: Desplegar el portal
+run-name: Desplegar ${{ inputs.version }} en ${{ inputs.entorno }}
 
 on:
   workflow_dispatch:
