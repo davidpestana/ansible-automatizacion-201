@@ -1,0 +1,4 @@
+# Reglas de calidad del proyecto (ansible-lint). Perfil de producción.
+profile: production
+exclude_paths:
+  - app/
