@@ -1,0 +1,65 @@
+name: Desplegar el portal
+
+on:
+  workflow_dispatch:
+    inputs:
+      entorno:
+        description: Entorno de destino
+        type: choice
+        options: [dev, pre, prod]
+        default: dev
+      version:
+        description: Versión del portal (x.y.z)
+        type: string
+        required: true
+        default: "1.1.0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desplegar-${{ inputs.entorno }}
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    name: Desplegar ${{ inputs.version }} en ${{ inputs.entorno }}
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.entorno }}
+    env:
+      ANSIBLE_FORCE_COLOR: "1"
+      ENTORNO: ${{ inputs.entorno }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v7
+
+      - name: Preparar Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar Ansible y ansible-lint
+        run: pip install -r requirements.txt
+
+      - name: Levantar los nodos del runner
+        run: bash scripts/nodos.sh up
+
+      - name: Instalar el entorno (los nodos del runner nacen vacíos)
+        working-directory: proyecto
+        run: make site ENTORNO="$ENTORNO" CONFIRMAR=si
+
+      - name: Desplegar la versión
+        working-directory: proyecto
+        run: make deploy ENTORNO="$ENTORNO" VERSION="$VERSION" CONFIRMAR=si
+
+      - name: Verificar el portal
+        run: |
+          case "$ENTORNO" in
+            dev) PUERTO=8081 ;;
+            pre) PUERTO=8082 ;;
+            prod) PUERTO=8080 ;;
+          esac
+          curl -s "localhost:$PUERTO/estado.json"
+          curl -s "localhost:$PUERTO/estado.json" | grep -q "\"version\": \"$VERSION\""
