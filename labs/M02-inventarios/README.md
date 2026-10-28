@@ -1,22 +1,20 @@
 # M02 — Inventarios
 
-[← Página anterior](../M01-fundamentos-arquitectura/03-lab-primer-playbook.md) · [Siguiente página →](00-inventario-del-portal.md)
+[← Página anterior](../M01-fundamentos-arquitectura/03-lab-primer-playbook.md) · [Siguiente página →](00-inventario-estatico.md)
 
-Hasta ahora, el inventario del portal de Tienda Norte es una lista de seis nombres en `proyecto/inventario.ini`.
-Para Ansible todos son iguales: no sabe que `prod-lb1` es el balanceador, que `prod-db1` lleva PostgreSQL ni
-que `dev-web1` es un entorno donde se puede romper. Así que cualquier ejecución va a «todos» o a nombres
-escritos a mano, y lanzar algo contra prod por error está a un `all` de distancia. Este módulo convierte esa
-lista en la descripción de la arquitectura: grupos por función y por entorno, los valores que distinguen a
-cada nodo y un inventario por entorno, para que cada ejecución apunte a dev, pre o prod de forma explícita.
-Se cierra con un inventario dinámico que descubre los nodos a partir de los contenedores que los ejecutan.
+El inventario es la descripción de la infraestructura que gestiona Ansible: qué nodos hay, cómo se agrupan y
+qué valores distinguen a cada uno. Una lista plana de nombres sirve para empezar, pero no dice qué hace cada
+máquina ni a qué entorno pertenece, y cualquier ejecución acaba yendo a «todos» o a nombres escritos a mano.
+Este módulo trata el inventario como modelo de la arquitectura: grupos por función y por entorno, variables
+de grupo y de host, un inventario por entorno para que cada ejecución apunte a uno de forma explícita y, por
+último, inventarios dinámicos que descubren los nodos a partir de una fuente externa.
 
 ## Qué aprenderás
 
 - Leer un inventario con `ansible-inventory --graph` y `--list` y elegir nodos con patrones antes de lanzar nada.
-- Agrupar los nodos del portal por función (`web`, `lb`, `db`) y por entorno (`dev`, `pre`, `prod`), con
-  grupos que contienen grupos.
+- Agrupar nodos por función y por entorno, con grupos que contienen grupos.
 - Dar valores a grupos y a nodos concretos dentro del inventario y saber cuál se aplica cuando chocan.
-- Separar dev, pre y prod en inventarios propios y decidir con `-i` (o con `ansible.cfg`) contra cuál trabajas.
+- Separar los entornos en inventarios propios y decidir con `-i` (o con `ansible.cfg`) contra cuál trabajas.
 - Generar el inventario desde Docker con el plugin `community.docker.docker_containers`, agrupando por las
   etiquetas de los contenedores.
 
@@ -26,32 +24,31 @@ Un **inventario** responde a dos preguntas: qué nodos hay y cómo se agrupan. L
 conexión) cuelga de ahí. Ansible siempre añade dos grupos implícitos: `all` (todos los nodos) y `ungrouped`
 (los que no están en ningún grupo propio).
 
-| Formato | Aspecto | Cuándo se usa en el curso |
-|---------|---------|---------------------------|
-| INI | `[web]` y un nodo por línea; variables con `clave=valor` | Inventario plano de partida y labs de grupos y variables |
-| YAML | `all:` → `children:` → `web:` → `hosts:` | Inventarios por entorno de `proyecto/inventories/` desde M03 |
-| Plugin (YAML) | `plugin: community.docker.docker_containers` y sus opciones | Inventario dinámico: los nodos salen de Docker al ejecutar |
+| Formato | Aspecto | Cuándo conviene |
+|---------|---------|-----------------|
+| INI | `[webservers]` y un nodo por línea; variables con `clave=valor` | Inventarios pequeños y planos |
+| YAML | `all:` → `children:` → `webservers:` → `hosts:` | Jerarquías de grupos y variables estructuradas |
+| Plugin (YAML) | `plugin: <colección>.<plugin>` y sus opciones | Inventario dinámico: los nodos salen de una nube, un hipervisor o Docker al ejecutar |
 
-Los grupos del portal se cruzan en dos ejes. Un nodo está en tantos grupos como haga falta:
+Los grupos suelen cruzarse en dos ejes, función y entorno. Un nodo está en tantos grupos como haga falta:
 
 | Nodo | Grupo por función | Grupo por entorno |
 |------|-------------------|-------------------|
-| `dev-web1` | `web` | `dev` |
-| `pre-web1` | `web` | `pre` |
-| `prod-lb1` | `lb` | `prod` |
-| `prod-web1`, `prod-web2` | `web` | `prod` |
-| `prod-db1` | `db` | `prod` |
+| `web-dev1` | `webservers` | `dev` |
+| `web-prod1`, `web-prod2` | `webservers` | `prod` |
+| `lb-prod1` | `loadbalancers` | `prod` |
+| `db-prod1` | `dbservers` | `prod` |
 
 Un grupo puede contener otros grupos (`children`): `pruebas` = `dev` + `pre`. Y para elegir nodos en cada
 ejecución están los **patrones**:
 
-| Patrón | Significado | En el portal |
-|--------|-------------|--------------|
-| `web` | Un grupo | Los cuatro nodos web |
-| `web:lb` | Unión | Web y balanceador |
-| `prod:&web` | Intersección | `prod-web1` y `prod-web2` |
-| `web:!prod` | Diferencia | `dev-web1` y `pre-web1` |
-| `prod-*` | Comodín sobre nombres | Los cuatro nodos de prod |
+| Patrón | Significado | Con los nodos de la tabla |
+|--------|-------------|---------------------------|
+| `webservers` | Un grupo | Los tres servidores web |
+| `webservers:loadbalancers` | Unión | Web y balanceador |
+| `prod:&webservers` | Intersección | `web-prod1` y `web-prod2` |
+| `webservers:!prod` | Diferencia | `web-dev1` |
+| `*-prod*` | Comodín sobre nombres | Los cuatro nodos de prod |
 
 Cuando una variable está definida en varios sitios del inventario, gana la más específica:
 
@@ -64,20 +61,19 @@ Cuando una variable está definida en varios sitios del inventario, gana la más
 
 > [!NOTE]
 > Las variables de conexión (`ansible_host`, `ansible_port`, `ansible_user`…) son variables de inventario
-> como cualquier otra, pero cambian cómo conecta Ansible. En el curso los nombres ya resuelven por
-> `infra/ssh_config`, así que `ansible_host` solo hace falta cuando el nombre del inventario no basta para
-> llegar al nodo, como en el inventario dinámico.
+> como cualquier otra, pero cambian cómo conecta Ansible. `ansible_host` solo hace falta cuando el nombre del
+> inventario no basta para llegar al nodo (no resuelve por DNS ni por `ssh_config`).
 
 > [!NOTE]
-> Este módulo deja las variables dentro del inventario. Los ficheros `group_vars/` y `host_vars/` junto al
-> inventario, y la precedencia completa (inventario, playbook, línea de comandos), son del M04.
+> Las variables también pueden vivir en ficheros `group_vars/` y `host_vars/` junto al inventario; esa
+> organización y la precedencia completa (inventario, playbook, línea de comandos) son del M04.
 
 Por qué un inventario por entorno y no uno con todo:
 
-| Un inventario con dev, pre y prod | Un inventario por entorno |
-|-----------------------------------|---------------------------|
-| `ansible web …` toca los cuatro web, prod incluido | `ansible web …` toca solo los web del entorno elegido |
-| Una variable de entorno en `all` se pisa entre entornos | Cada fichero tiene su `all` y su `portal_entorno` |
+| Un inventario con todos los entornos | Un inventario por entorno |
+|--------------------------------------|---------------------------|
+| `ansible webservers …` toca todos los web, producción incluida | `ansible webservers …` toca solo los del entorno elegido |
+| Una variable de entorno en `all` se pisa entre entornos | Cada fichero tiene su `all` con sus valores |
 | El entorno se elige con patrones, a mano | El entorno se elige con `-i inventories/<entorno>/hosts.yml` |
 
 ## Páginas
@@ -85,11 +81,11 @@ Por qué un inventario por entorno y no uno con todo:
 <!-- gen:paginas -->
 | # | Página | Qué hay |
 |---|--------|---------|
-| 00 | [El inventario del portal](00-inventario-del-portal.md) | Demostración: un inventario INI y su versión YAML, leídos con ansible-inventory |
+| 00 | [Inventario estático](00-inventario-estatico.md) | Demostración: un inventario INI y su versión YAML, leídos con ansible-inventory |
 | 01 | [Lab — Grupos y jerarquías](01-lab-grupos-y-jerarquias.md) | Agrupas los nodos por función y por entorno con grupos hijos |
 | 02 | [Lab — Variables en inventario](02-lab-variables-en-inventario.md) | Das valores a grupos y hosts y compruebas cuál gana |
 | 03 | [Lab — Inventarios por entornos](03-lab-inventarios-por-entornos.md) | Separas dev, pre y prod en inventarios propios y apuntas cada ejecución a uno |
 | 04 | [Lab — Inventario dinámico](04-lab-inventario-dinamico.md) | Descubres los nodos a partir de los contenedores con el plugin de Docker |
 
-→ Empieza por **[00 — El inventario del portal](00-inventario-del-portal.md)**.
+→ Empieza por **[00 — Inventario estático](00-inventario-estatico.md)**.
 <!-- /gen:paginas -->

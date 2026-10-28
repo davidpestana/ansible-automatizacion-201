@@ -2,44 +2,44 @@
 
 [← Página anterior](../../README.md) · [Siguiente página →](00-que-es-ansible.md)
 
-El equipo de operaciones de Tienda Norte mantiene el portal de pedidos con un runbook: una lista de pasos que
-alguien repite por SSH en cada servidor, de `dev-web1` a `prod-db1`. Este módulo pone la primera piedra para
-sustituirlo. Primero, qué es Ansible y cómo llega a los nodos sin instalar nada en ellos. Después, módulos
-sueltos lanzados desde el Codespace. Por último, un primer playbook que deja los seis nodos del portal en el
-mismo estado, se ejecute las veces que se ejecute.
+Ansible es una herramienta de código abierto para la automatización de TI: configura servidores, despliega
+aplicaciones y gestiona infraestructuras describiendo en ficheros de texto el estado al que deben llegar las
+máquinas. Este módulo presenta sus piezas y su arquitectura: un nodo de control que se conecta por SSH a los
+nodos gestionados sin instalar ningún agente en ellos, un inventario que dice cuáles son, módulos que hacen el
+trabajo y playbooks que encadenan ese trabajo de forma repetible e idempotente.
 
 ## Qué aprenderás
 
-- Explicar qué hace el nodo de control (tu Codespace) y qué necesita cada nodo gestionado: SSH, Python y un
-  usuario con `sudo`, nada más.
-- Describir los nodos del portal en un inventario y comprobar que Ansible llega a todos con `ansible all -m ping`.
-- Lanzar módulos ad hoc (`command`, `setup`) para consultar los seis nodos de una vez, sin entrar en ellos uno a uno.
-- Comprobar en un nodo que Ansible no deja ningún proceso ni paquete instalado.
-- Escribir `primer-playbook.yml`, ejecutarlo, leer el `PLAY RECAP` y ver que la segunda ejecución no cambia nada.
+- Explicar qué hace el nodo de control y qué necesita cada nodo gestionado: SSH, Python y un usuario con
+  `sudo`, nada más.
+- Describir varios nodos en un inventario y comprobar que Ansible llega a todos con `ansible all -m ping`.
+- Lanzar módulos ad hoc (`command`, `setup`) para consultar muchos nodos de una vez, sin entrar en ellos uno a uno.
+- Comprobar en un nodo gestionado que Ansible no deja ningún proceso ni paquete instalado.
+- Escribir y ejecutar un primer playbook, leer el `PLAY RECAP` y ver que la segunda ejecución no cambia nada.
 
 ## Teoría
 
 ### Las piezas de un proyecto Ansible
 
-| Pieza | Qué es | En Tienda Norte |
-|-------|--------|-----------------|
-| Nodo de control | La máquina donde está instalado Ansible y desde la que se lanza todo | El Codespace, dentro de `proyecto/` |
-| Nodos gestionados | Las máquinas que Ansible configura | `dev-web1`, `pre-web1`, `prod-lb1`, `prod-web1`, `prod-web2`, `prod-db1` |
-| Inventario | Fichero con la lista de nodos (y, más adelante, sus grupos y variables) | `proyecto/inventario.ini` |
-| `ansible.cfg` | Configuración del proyecto: inventario por defecto, usuario remoto, clave, opciones de SSH | `proyecto/ansible.cfg`, ya preparado |
+| Pieza | Qué es | Ejemplo |
+|-------|--------|---------|
+| Nodo de control | La máquina donde está instalado Ansible y desde la que se lanza todo | Un portátil, un servidor de administración o un runner de CI |
+| Nodos gestionados | Las máquinas que Ansible configura | Servidores web, de base de datos, balanceadores |
+| Inventario | Fichero con la lista de nodos (y, más adelante, sus grupos y variables) | `inventario.ini` |
+| `ansible.cfg` | Configuración del proyecto: inventario por defecto, usuario remoto, clave, opciones de SSH | `ansible.cfg` en la raíz del proyecto |
 | Módulo | Unidad de trabajo que se ejecuta en el nodo: crear un directorio, copiar un fichero, instalar un paquete | `ansible.builtin.file`, `ansible.builtin.copy`, `ansible.builtin.ping` |
-| Tarea | Una llamada a un módulo con sus parámetros y un nombre legible | «Crear la carpeta del portal» |
-| Play | Un conjunto de tareas que se aplican a unos hosts del inventario | «Preparar los nodos del portal», sobre `all` |
-| Playbook | Fichero YAML con uno o varios plays | `proyecto/primer-playbook.yml` |
+| Tarea | Una llamada a un módulo con sus parámetros y un nombre legible | «Crear el directorio de la aplicación» |
+| Play | Un conjunto de tareas que se aplican a unos hosts del inventario | «Preparar los servidores web», sobre `webservers` |
+| Playbook | Fichero YAML con uno o varios plays | `site.yml` |
 
 ### Dos formas de lanzar Ansible
 
 | | Comando ad hoc | Playbook |
 |---|----------------|----------|
 | Herramienta | `ansible <hosts> -m <módulo> -a '<argumentos>'` | `ansible-playbook <fichero>.yml` |
-| Para qué | Una consulta o un arreglo puntual: ¿responden todos?, ¿qué versión de Debian tienen? | Un procedimiento completo y repetible: el runbook |
+| Para qué | Una consulta o un arreglo puntual: ¿responden todos?, ¿qué versión del sistema tienen? | Un procedimiento completo y repetible |
 | Queda escrito | No, solo en el historial del terminal | Sí, en un fichero que se versiona y se revisa |
-| Ejemplo | `ansible all -m command -a 'uname -a'` | `ansible-playbook primer-playbook.yml` |
+| Ejemplo | `ansible all -m command -a 'uname -a'` | `ansible-playbook site.yml` |
 
 ### Cómo leer el resultado
 
@@ -57,15 +57,16 @@ Cada tarea devuelve un estado por nodo, y el `PLAY RECAP` final los cuenta:
 > un playbook bien escrito da `changed` la primera vez y `changed=0` la segunda. Eso es la **idempotencia**.
 
 > [!NOTE]
-> Todos los comandos `ansible` y `ansible-playbook` del curso se lanzan desde `proyecto/`, porque ahí está
-> `ansible.cfg`. Desde otra carpeta Ansible no encuentra el inventario y solo ve `localhost`.
+> Ansible busca `ansible.cfg` en el directorio actual. Por eso los comandos se lanzan desde la raíz del
+> proyecto: desde otra carpeta no encuentra el inventario y solo ve `localhost`. En los laboratorios del curso,
+> esa raíz es `proyecto/`.
 
 ## Páginas
 
 <!-- gen:paginas -->
 | # | Página | Qué hay |
 |---|--------|---------|
-| 00 | [Qué es Ansible](00-que-es-ansible.md) | Para qué sirve, casos de uso en Tienda Norte y cómo trabaja sin agente |
+| 00 | [Qué es Ansible](00-que-es-ansible.md) | Para qué sirve, casos de uso y cómo trabaja sin agente |
 | 01 | [Del runbook al playbook](01-del-runbook-al-playbook.md) | Demostración: el runbook del portal frente a un inventario, un playbook y sus módulos, ejecutado dos veces |
 | 02 | [Lab — Conexión agentless](02-lab-conexion-agentless.md) | Conectas por SSH con los nodos y lanzas módulos ad hoc desde el Codespace |
 | 03 | [Lab — Primer playbook](03-lab-primer-playbook.md) | Escribes y ejecutas un playbook que prepara los nodos web |

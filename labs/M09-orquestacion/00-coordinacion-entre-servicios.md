@@ -1,4 +1,4 @@
-# El orden del portal
+# Coordinación entre servicios
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-dependencias.md)
 

@@ -5,30 +5,27 @@
 ## Objetivo general
 
 Al finalizar el curso, el alumno automatiza con Ansible la instalación, la configuración, el despliegue y la
-operación de un servicio en varios nodos y entornos, con roles reutilizables, ejecuciones estandarizadas y
-validadas, y lanzadas desde un controlador central o desde un pipeline.
+operación de servicios en varios nodos y entornos, con roles reutilizables, ejecuciones estandarizadas y
+validadas, lanzadas desde un controlador central o desde un pipeline.
 
 ## Enfoque
 
-Un único escenario de principio a fin: el **portal de pedidos de Tienda Norte**, que hoy el equipo de
-operaciones mantiene con un runbook de pasos manuales por SSH. Tiene un nodo en dev, otro en pre y, en prod,
-un balanceador, dos servidores web y una base de datos PostgreSQL.
+Ansible es una herramienta de código abierto para la automatización de TI que permite configurar servidores,
+desplegar aplicaciones y gestionar infraestructuras a gran escala de forma sencilla. El curso la recorre de los
+fundamentos a la operación en equipo: inventarios, playbooks, variables y plantillas, roles, control de la
+ejecución, despliegues, operaciones de día 2 y orquestación; y se cierra con la gobernanza de un proyecto
+Ansible (Makefile, ansible-lint, modo check y pull requests), su ejecución centralizada en AWX y su integración
+en un pipeline de CI/CD con un flujo GitOps básico.
 
-El curso convierte ese runbook en un proyecto Ansible que crece módulo a módulo: primero los nodos y su
-inventario por entornos; después el playbook que instala y configura el servicio, las variables y plantillas
-que lo adaptan a cada entorno y el rol que lo empaqueta; luego el despliegue de nuevas versiones por tandas,
-el parcheo, los cambios controlados y la orquestación entre base de datos, web y balanceador. Se cierra con
-la gobernanza del proyecto (Makefile, ansible-lint, modo check y pull requests), su ejecución centralizada en
-AWX y su integración en un pipeline de GitHub Actions con un flujo GitOps básico.
-
-Cada concepto se ve en una demostración y se practica en un laboratorio propio, que arranca desde un punto de
-partida reproducible: no hace falta haber hecho el anterior.
+Cada módulo explica primero los conceptos y después los aplica. Las demostraciones y los laboratorios siguen el
+caso de una empresa ficticia que pasa de un runbook manual a un proyecto Ansible que crece módulo a módulo.
+Cada laboratorio arranca desde un punto de partida reproducible: no hace falta haber hecho el anterior.
 
 ## Dirigido a
 
 Administradores de sistemas y equipos de operaciones o DevOps que mantienen servidores Linux a mano o con
 scripts y van a estandarizar esas tareas con Ansible: instalar y configurar servicios, desplegar versiones,
-parchear y llevar los cambios de dev a prod de forma revisada y repetible.
+parchear y llevar los cambios de desarrollo a producción de forma revisada y repetible.
 
 ## Conocimientos previos
 
@@ -36,23 +33,23 @@ parchear y llevar los cambios de dev a prod de forma revisada y repetible.
 - Basta con haberlo usado: Git (commit, rama, push) y GitHub.
 - Se estudia en el curso: Ansible y YAML desde cero, ansible-lint, Makefile, AWX y GitHub Actions aplicados a Ansible.
 
-El entorno es un GitHub Codespace con todo instalado y los servidores del portal ya levantados como
+El entorno es un GitHub Codespace con todo instalado y los servidores de prácticas ya levantados como
 contenedores: solo hace falta una cuenta de GitHub.
 
 ## Objetivos específicos
 
-- Explicar el modelo agentless de Ansible y ejecutar módulos y un primer playbook sobre los nodos del portal.
+- Explicar el modelo agentless de Ansible y ejecutar módulos y un primer playbook sobre varios nodos.
 - Describir los nodos por función y entorno en inventarios estáticos y dinámicos, con sus variables.
-- Escribir playbooks idempotentes que instalan y configuran nginx y el portal.
+- Escribir playbooks idempotentes que instalan y configuran un servicio.
 - Adaptar la configuración a cada nodo y entorno con group_vars, host_vars, plantillas Jinja2 y facts.
 - Empaquetar la automatización en roles reutilizables dentro de un proyecto ordenado.
 - Controlar la ejecución con condicionales, bucles, handlers, tags y el registro de resultados.
-- Desplegar releases del portal en varios nodos, por tandas y con vuelta atrás.
+- Desplegar versiones de una aplicación en varios nodos, por tandas y con vuelta atrás.
 - Parchear, aplicar cambios controlados en producción y diagnosticar ejecuciones que fallan.
-- Orquestar base de datos, web y balanceador con sus dependencias, en secuencia o en paralelo.
+- Orquestar servicios dependientes (base de datos, aplicación, balanceador), en secuencia o en paralelo.
 - Estandarizar y validar cada ejecución con Makefile, ansible-lint y modo check, y llevar los cambios por pull request.
 - Reconocer qué aportan AWX, Red Hat Ansible Automation Platform y un CI/CD como control centralizado.
-- Ejecutar Ansible desde GitHub Actions para validar, desplegar y aplicar lo que hay en `main`.
+- Ejecutar Ansible desde un pipeline para validar, desplegar y aplicar lo que hay en la rama principal.
 
 ## Temario
 
@@ -64,7 +61,7 @@ contenedores: solo hace falta una cuenta de GitHub.
   - [Idempotencia](labs/M01-fundamentos-arquitectura/01-del-runbook-al-playbook.md)
   - [Primer playbook y ejecución sobre nodos](labs/M01-fundamentos-arquitectura/03-lab-primer-playbook.md)
 - **[M02 — Inventarios](labs/M02-inventarios/README.md)**
-  - [Inventario estático](labs/M02-inventarios/00-inventario-del-portal.md)
+  - [Inventario estático](labs/M02-inventarios/00-inventario-estatico.md)
   - [Grupos y jerarquías](labs/M02-inventarios/01-lab-grupos-y-jerarquias.md)
   - [Variables en inventario](labs/M02-inventarios/02-lab-variables-en-inventario.md)
   - [Introducción a inventario dinámico](labs/M02-inventarios/04-lab-inventario-dinamico.md)
@@ -96,18 +93,18 @@ contenedores: solo hace falta una cuenta de GitHub.
   - [Despliegue completo de servicio](labs/M07-despliegues/01-lab-despliegue-completo.md)
 - **[M08 — Operaciones de día 2](labs/M08-operaciones-dia-2/README.md)**
   - [Actualizaciones y parcheo](labs/M08-operaciones-dia-2/01-lab-parcheo.md)
-  - [Cambios controlados](labs/M08-operaciones-dia-2/00-un-cambio-en-produccion.md)
+  - [Cambios controlados](labs/M08-operaciones-dia-2/00-cambios-controlados.md)
   - [Troubleshooting](labs/M08-operaciones-dia-2/03-lab-troubleshooting.md)
   - [Simulación de cambios en entorno productivo](labs/M08-operaciones-dia-2/02-lab-cambio-en-produccion.md)
 - **[M09 — Orquestación](labs/M09-orquestacion/README.md)**
-  - [Coordinación entre servicios](labs/M09-orquestacion/00-orden-del-portal.md)
+  - [Coordinación entre servicios](labs/M09-orquestacion/00-coordinacion-entre-servicios.md)
   - [Dependencias](labs/M09-orquestacion/01-lab-dependencias.md)
   - [Ejecución secuencial y paralela](labs/M09-orquestacion/02-lab-secuencial-y-paralelo.md)
   - [Orquestación de varios nodos](labs/M09-orquestacion/03-lab-orquestar-nodos.md)
 - **[M10 — Gobernanza y operación de Ansible](labs/M10-gobernanza/README.md)**
-  - [Estandarización de ejecuciones:](labs/M10-gobernanza/00-un-proyecto-de-equipo.md)
+  - [Estandarización de ejecuciones:](labs/M10-gobernanza/00-estandarizar-y-organizar.md)
   - [uso de Makefile como punto de entrada (make deploy, make check, etc.)](labs/M10-gobernanza/01-lab-makefile.md)
-  - [Organización de repositorios y entornos (dev / pre / prod)](labs/M10-gobernanza/00-un-proyecto-de-equipo.md)
+  - [Organización de repositorios y entornos (dev / pre / prod)](labs/M10-gobernanza/00-estandarizar-y-organizar.md)
   - [Control de cambios con Git (PR, revisión, trazabilidad)](labs/M10-gobernanza/04-lab-cambios-con-pr.md)
   - [Validación y calidad:](labs/M10-gobernanza/02-lab-ansible-lint.md)
   - [ansible-lint](labs/M10-gobernanza/02-lab-ansible-lint.md)

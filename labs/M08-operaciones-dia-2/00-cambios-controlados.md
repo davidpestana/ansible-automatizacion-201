@@ -1,4 +1,4 @@
-# Un cambio en producción
+# Cambios controlados
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-parcheo.md)
 

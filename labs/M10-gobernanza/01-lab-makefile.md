@@ -1,6 +1,6 @@
 # Lab — Makefile
 
-[← Página anterior](00-un-proyecto-de-equipo.md) · [Siguiente página →](02-lab-ansible-lint.md)
+[← Página anterior](00-estandarizar-y-organizar.md) · [Siguiente página →](02-lab-ansible-lint.md)
 
 En el equipo de operaciones de Tienda Norte cada persona lanza `ansible-playbook` con sus opciones: unos olvidan el
 `-i`, otros despliegan en prod sin simular antes. En este lab escribes el `Makefile` de `proyecto/`: un único punto

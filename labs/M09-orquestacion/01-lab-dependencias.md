@@ -1,6 +1,6 @@
 # Lab — Dependencias
 
-[← Página anterior](00-orden-del-portal.md) · [Siguiente página →](02-lab-secuencial-y-paralelo.md)
+[← Página anterior](00-coordinacion-entre-servicios.md) · [Siguiente página →](02-lab-secuencial-y-paralelo.md)
 
 En prod, las web del portal de Tienda Norte dicen trabajar contra `prod-db1`, pero el proyecto nunca instala la base
 de datos: `db.yml` existe y `site.yml` no lo llama. En este lab haces explícita esa dependencia: las web esperan a que

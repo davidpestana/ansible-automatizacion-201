@@ -1,6 +1,6 @@
 # Lab — Parcheo
 
-[← Página anterior](00-un-cambio-en-produccion.md) · [Siguiente página →](02-lab-cambio-en-produccion.md)
+[← Página anterior](00-cambios-controlados.md) · [Siguiente página →](02-lab-cambio-en-produccion.md)
 
 En Tienda Norte los parches se aplicaban entrando por SSH en cada servidor y lanzando `apt-get upgrade` a mano, a
 veces en los dos web a la vez y sin mirar antes qué se iba a actualizar. En este lab escribes `parcheo.yml`: un

@@ -1,4 +1,4 @@
-# El inventario del portal
+# Inventario estático
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-grupos-y-jerarquias.md)
 

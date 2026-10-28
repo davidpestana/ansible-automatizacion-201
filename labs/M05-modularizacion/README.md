@@ -2,19 +2,19 @@
 
 [← Página anterior](../M04-gestion-configuracion/04-lab-configuracion-por-entorno.md) · [Siguiente página →](00-estructura-de-un-rol.md)
 
-En el M04 el portal de Tienda Norte quedó en un único `portal.yml` con plantillas y variables por entorno. Funciona,
-pero es un bloque: para montar el balanceador habría que copiar media lógica, y cualquiera que quiera desplegar el
-portal tiene que entender el playbook entero. Este módulo trata los **roles y la estructura de proyectos**: el
-playbook se convierte en el rol `portal`, el balanceador en el rol `portal_lb`, y `site.yml` monta los dos. Es la
-forma de **reutilizar código** que se mantiene igual en dev, pre y prod, y la base de las **buenas prácticas** que
-el resto del curso da por hechas.
+Un playbook que lo hace todo funciona, pero es un bloque: para reutilizar parte de su lógica hay que copiarla, y
+quien quiera usarlo tiene que entenderlo entero. Los **roles** son la unidad de reutilización de Ansible: una
+carpeta con una estructura fija (tareas, handlers, plantillas, valores por defecto, metadatos) que cualquier
+playbook puede aplicar a unos hosts con una línea. Este módulo cubre la estructura de un rol y de un proyecto
+que crece, cómo se hace un rol configurable y reutilizable, y las buenas prácticas que mantienen legible un
+proyecto compartido.
 
 ## Qué aprenderás
 
 - Generar el esqueleto de un rol con `ansible-galaxy role init` y saber qué va en cada carpeta.
-- Convertir `portal.yml` en el rol `portal` sin cambiar nada en los nodos (`changed=0`).
+- Convertir un playbook en un rol sin cambiar nada en los nodos (`changed=0`).
 - Hacer un rol configurable con `defaults` y cambiar su comportamiento desde el inventario o con `-e`.
-- Crear un segundo rol (`portal_lb`) siguiendo el mismo patrón y orquestar los dos con `site.yml`.
+- Crear un segundo rol siguiendo el mismo patrón y combinar los dos en un playbook principal.
 - Ordenar el proyecto para que escale: `inventories/`, `roles/`, playbooks en la raíz y `ansible.cfg` con `roles_path`.
 
 ## Teoría
@@ -22,41 +22,40 @@ el resto del curso da por hechas.
 Un **rol** es una carpeta con una estructura fija que Ansible sabe leer: no hace falta decirle dónde están las
 tareas, las plantillas o los valores por defecto. El playbook solo dice *a qué hosts* y *qué rol*.
 
-| Carpeta del rol | Qué contiene | En el rol `portal` |
-|-----------------|--------------|--------------------|
-| `tasks/` | Las tareas; se empieza por `main.yml` | Instalar nginx, configurarlo, desplegar la release |
-| `handlers/` | Tareas que se ejecutan cuando otra las notifica | Se usa en el M06 (`Recargar nginx`) |
-| `templates/` | Plantillas Jinja2; `src:` las busca aquí sin ruta | `nginx.conf.j2`, `portal.conf.j2`, `estado.json.j2` |
-| `files/` | Ficheros que se copian tal cual | No hace falta: la release vive en `app/` del proyecto |
-| `defaults/` | Valores por defecto, la prioridad **más baja** | `portal_puerto: 80`, `portal_raiz: /srv/portal`… |
-| `vars/` | Valores internos, prioridad **alta** | No se usa |
+| Carpeta del rol | Qué contiene | Ejemplo en un rol `webserver` |
+|-----------------|--------------|-------------------------------|
+| `tasks/` | Las tareas; se empieza por `main.yml` | Instalar nginx, configurarlo, publicar el sitio |
+| `handlers/` | Tareas que se ejecutan cuando otra las notifica | `Recargar nginx` |
+| `templates/` | Plantillas Jinja2; `src:` las busca aquí sin ruta | `nginx.conf.j2`, `sitio.conf.j2` |
+| `files/` | Ficheros que se copian tal cual | Una página estática, un certificado de prueba |
+| `defaults/` | Valores por defecto, la prioridad **más baja** | `webserver_puerto: 80` |
+| `vars/` | Valores internos, prioridad **alta** | Nombres de paquete por distribución |
 | `meta/` | Autor, plataformas y dependencias del rol | `galaxy_info` y `dependencies: []` |
 
-Así queda el proyecto al final del módulo:
+Una estructura de proyecto habitual:
 
 ```text
 proyecto/
-├── ansible.cfg            # roles_path = roles
-├── app/releases/…         # las versiones del portal
+├── ansible.cfg                   # roles_path = roles
 ├── inventories/{dev,pre,prod}/   # hosts.yml, group_vars/, host_vars/
 ├── roles/
-│   ├── portal/            # servidor web
-│   └── portal_lb/         # balanceador
-├── web.yml                # hosts: web → rol portal
-├── lb.yml                 # hosts: lb  → rol portal_lb
-└── site.yml               # import_playbook de web.yml y lb.yml
+│   ├── webserver/
+│   └── loadbalancer/
+├── web.yml                       # hosts: webservers    → rol webserver
+├── lb.yml                        # hosts: loadbalancers → rol loadbalancer
+└── site.yml                      # import_playbook de web.yml y lb.yml
 ```
 
 > [!NOTE]
 > **`defaults` frente a `vars`.** Los dos guardan variables del rol, pero en extremos opuestos de la precedencia.
 > Lo que va en `defaults/main.yml` es lo que *se puede* cambiar: el `group_vars` de cada entorno lo pisa. Lo que va
-> en `vars/main.yml` gana al inventario y solo lo supera `-e`. Si `portal_version` estuviera en `vars/`, dev, pre
-> y prod desplegarían la misma versión digan lo que digan sus `group_vars`.
+> en `vars/main.yml` gana al inventario y solo lo supera `-e`. Si la versión a desplegar estuviera en `vars/`,
+> todos los entornos desplegarían la misma, digan lo que digan sus `group_vars`.
 
 > [!NOTE]
-> **Por qué `portal` y `portal_*`.** ansible-lint (regla `var-naming[no-role-prefix]`) exige que las variables de un
-> rol empiecen por el nombre del rol. Como todo el proyecto ya usa `portal_version`, `portal_color`, etc., el rol
-> web se llama `portal`, y el del balanceador `portal_lb` con variables `portal_lb_*`.
+> **Prefijo de las variables.** ansible-lint (regla `var-naming[no-role-prefix]`) exige que las variables de un
+> rol empiecen por el nombre del rol: `webserver_puerto`, no `puerto`. Evita choques entre roles y deja claro de
+> dónde sale cada valor.
 
 ## Páginas
 

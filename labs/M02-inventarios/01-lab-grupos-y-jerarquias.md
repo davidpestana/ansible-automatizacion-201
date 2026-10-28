@@ -1,6 +1,6 @@
 # Lab — Grupos y jerarquías
 
-[← Página anterior](00-inventario-del-portal.md) · [Siguiente página →](02-lab-variables-en-inventario.md)
+[← Página anterior](00-inventario-estatico.md) · [Siguiente página →](02-lab-variables-en-inventario.md)
 
 El inventario del portal de Tienda Norte es una lista de seis nombres. Para hacer ping solo a los servidores
 web de prod, hoy hay que escribir `prod-web1,prod-web2` a mano, y el día que llegue `prod-web3` habrá que

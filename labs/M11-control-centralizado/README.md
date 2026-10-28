@@ -2,51 +2,50 @@
 
 [← Página anterior](../M10-gobernanza/04-lab-cambios-con-pr.md) · [Siguiente página →](00-awx-y-aap.md)
 
-Hasta aquí, el portal de Tienda Norte se despliega desde un terminal: quien tiene el Codespace, la clave
-SSH y el `Makefile` lanza `make deploy ENTORNO=prod VERSION=1.1.0 CONFIRMAR=si`, y lo que pasó queda en
-su pantalla. Funciona para un equipo pequeño, pero en prod deja preguntas sin respuesta: quién puede
-desplegar, con qué clave, qué versión se lanzó el martes y por qué falló. Este módulo responde a esas
-preguntas con un **controlador central**: AWX (y su versión con soporte, Red Hat Ansible Automation
-Platform), y con la alternativa de lanzar Ansible desde un pipeline de CI/CD.
+Lanzar Ansible desde un terminal funciona para una persona o un equipo pequeño, pero en producción deja preguntas
+sin respuesta: quién puede ejecutar qué, con qué credenciales, qué se lanzó ayer y por qué falló. Un
+**controlador central** responde a esas preguntas: guarda inventarios y credenciales, define quién puede lanzar
+cada automatización, la programa, registra cada ejecución y la expone por API. Este módulo presenta AWX (el
+proyecto de código abierto) y Red Hat Ansible Automation Platform (la versión con soporte), y la alternativa de
+ejecutar Ansible desde un pipeline de CI/CD.
 
 ## Qué aprenderás
 
-- Explicar qué añade un controlador central a los playbooks del portal: inventario único, credenciales
-  guardadas, permisos por equipo, plantillas, programación, auditoría y API.
+- Explicar qué añade un controlador central a los playbooks: inventario único, credenciales guardadas, permisos por
+  equipo, plantillas, programación, auditoría y API.
 - Distinguir AWX de Red Hat Ansible Automation Platform y saber qué piezas trae la versión enterprise.
-- Reconocer en AWX el mismo proyecto que ya conoces: `proyecto/deploy.yml`, el inventario de prod y la clave
-  del usuario `ansible`, convertidos en proyecto, inventario, credencial y plantilla.
+- Reconocer en AWX las piezas de un proyecto Ansible: repositorio, inventario, clave SSH y playbook, convertidos
+  en proyecto, inventario, credencial y plantilla.
 - Leer la salida de un job y sus eventos por host, y saber dónde mirar quién lanzó qué.
-- Decidir entre AWX/AAP y un pipeline de GitHub Actions o GitLab CI según lo que necesite Tienda Norte.
+- Decidir entre un controlador (AWX/AAP) y un pipeline de GitHub Actions o GitLab CI según la necesidad.
 
 ## Teoría
 
-Los playbooks no cambian: `site.yml` y `deploy.yml` son los mismos se lancen desde el terminal, desde AWX o
-desde un pipeline. Cambia **quién** los lanza, **con qué** permisos y credenciales, y **dónde** queda el
-registro.
+Los playbooks no cambian: son los mismos se lancen desde el terminal, desde AWX o desde un pipeline. Cambia
+**quién** los lanza, **con qué** permisos y credenciales, y **dónde** queda el registro.
 
-| Pregunta en prod | Desde el terminal | Desde un controlador (AWX/AAP) | Desde CI/CD |
-|------------------|-------------------|--------------------------------|-------------|
-| ¿Quién puede desplegar? | Quien tenga la clave SSH | Usuarios y equipos con permiso sobre la plantilla | Quien pueda lanzar el workflow o aprobar el entorno |
+| Pregunta en producción | Desde el terminal | Desde un controlador (AWX/AAP) | Desde CI/CD |
+|------------------------|-------------------|--------------------------------|-------------|
+| ¿Quién puede ejecutar? | Quien tenga la clave SSH | Usuarios y equipos con permiso sobre la plantilla | Quien pueda lanzar el workflow o aprobar el entorno |
 | ¿Dónde está la clave? | En `~/.ssh/` de cada persona | Cifrada en el controlador; nadie la ve | En los secretos del repositorio o del proyecto |
-| ¿Qué hosts hay en prod? | El `hosts.yml` de la copia local | Un inventario sincronizado, visible para todos | El `hosts.yml` del commit que se ejecuta |
-| ¿Qué pasó el martes? | Lo que recuerde quien lo lanzó | Job con salida, eventos por host, usuario y variables | Log del pipeline, ligado a un commit |
+| ¿Qué hosts hay? | El inventario de la copia local | Un inventario sincronizado, visible para todos | El inventario del commit que se ejecuta |
+| ¿Qué pasó ayer? | Lo que recuerde quien lo lanzó | Job con salida, eventos por host, usuario y variables | Log del pipeline, ligado a un commit |
 
-Vocabulario de AWX que aparece en la demo:
+Vocabulario de AWX:
 
-| Objeto de AWX | Qué es en Tienda Norte |
-|---------------|------------------------|
-| Organization | Tienda Norte: agrupa todo lo demás |
-| Project | El fork en GitHub con `proyecto/`; AWX lo clona y lo sincroniza |
-| Inventory | «Portal prod», importado de `proyecto/inventories/prod/hosts.yml` |
-| Credential (Machine) | Usuario `ansible` y la clave `curso_ansible`, guardados cifrados |
-| Job Template | «Desplegar portal»: playbook + inventario + credencial + variables |
+| Objeto de AWX | Qué es |
+|---------------|--------|
+| Organization | Agrupa usuarios, equipos y recursos de una organización o departamento |
+| Project | Un repositorio Git con playbooks; AWX lo clona y lo sincroniza |
+| Inventory | Hosts y grupos, escritos a mano o importados de un fichero del proyecto o de una fuente dinámica |
+| Credential | Secreto guardado cifrado: clave SSH (*Machine*), token de Git, credenciales de nube… |
+| Job Template | Playbook + inventario + credencial + variables: lo que se lanza con un botón |
 | Job | Una ejecución de una plantilla, con su salida y su resultado por host |
 | Team / User | Quién puede ver, lanzar o administrar cada objeto |
 
 > [!NOTE]
 > AWX no sustituye a Ansible: dentro de cada job ejecuta `ansible-playbook` en un *execution environment*
-> (una imagen de contenedor con ansible-core y colecciones). Lo que sabes de playbooks, roles e inventarios
+> (una imagen de contenedor con ansible-core y colecciones). Lo que se sabe de playbooks, roles e inventarios
 > sigue valiendo tal cual.
 
 > [!NOTE]

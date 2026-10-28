@@ -2,15 +2,15 @@
 
 [← Página anterior](../M06-control-ejecucion/04-lab-registro-de-resultados.md) · [Siguiente página →](00-anatomia-de-un-despliegue.md)
 
-En el runbook de Tienda Norte, «sacar una versión» era entrar por SSH en cada servidor web, copiar ficheros,
-recargar nginx y mirar el navegador. Si algo salía mal a mitad, prod quedaba con un servidor en la versión nueva
-y otro en la vieja, y volver atrás era repetir todo a mano. Este módulo convierte esa tarea en
-**automatización de despliegues**: releases versionadas que se publican en todos los nodos de prod, se
-verifican y, si fallan, se deshacen solas, nodo a nodo.
+Automatizar un despliegue es más que copiar ficheros en los servidores: hay que publicar la versión nueva sin
+pisar la anterior, cambiar de una a otra en un solo paso, verificar que el servicio responde y, si no lo hace,
+volver atrás sin intervención manual. Este módulo cubre el despliegue por releases versionadas, la ejecución
+sobre múltiples nodos (patrones, `--limit`, `forks`) y las estrategias básicas: todos a la vez, por tandas y por
+tandas con vuelta atrás automática.
 
 ## Qué aprenderás
 
-- Publicar una release nueva del portal en prod (balanceador y dos web) y comprobarla desde el terminal con `curl`.
+- Publicar una release nueva de una aplicación en varios nodos y comprobarla desde el terminal con `curl`.
 - Elegir sobre qué nodos actúa cada ejecución con patrones, `--limit` y `--list-hosts`, y cuántos a la vez con `forks`.
 - Desplegar por tandas con `serial`, parar a la primera señal de error con `max_fail_percentage` y volver a la
   release anterior sin intervención manual.
@@ -19,37 +19,35 @@ verifican y, si fallan, se deshacen solas, nodo a nodo.
 
 ### Despliegue por releases
 
-Cada versión del portal vive en su propia carpeta y un enlace simbólico dice cuál se sirve:
+Cada versión de la aplicación vive en su propia carpeta y un enlace simbólico dice cuál se sirve:
 
 ```text
-/srv/portal/
-├── current -> /srv/portal/releases/1.1.0     ← lo que sirve nginx (root /srv/portal/current)
+/srv/app/
+├── current -> /srv/app/releases/1.1.0     ← lo que sirve el servidor web (root /srv/app/current)
 └── releases/
-    ├── 1.0.0/   index.html  estado.json
-    └── 1.1.0/   index.html  estado.json
+    ├── 1.0.0/
+    └── 1.1.0/
 ```
 
-| Pieza | Qué hace | Tarea del rol `portal` (`tasks/desplegar.yml`) |
-|-------|----------|------------------------------------------------|
-| Carpeta de la release | Guarda la versión completa, sin pisar las anteriores | `Crear la carpeta de la release`, `Copiar la release …` |
-| Enlace `current` | Cambia de versión en un solo paso | `Apuntar current a la release …` |
-| `estado.json` | Dice qué host, entorno y versión responde | `Publicar el estado del nodo` |
-| Verificación | Confirma que el portal responde tras el cambio | `ansible.builtin.uri` en `deploy.yml` |
+| Pieza | Qué hace | Cómo se hace con Ansible |
+|-------|----------|--------------------------|
+| Carpeta de la release | Guarda la versión completa, sin pisar las anteriores | `ansible.builtin.file` (`state: directory`) + `copy`, `unarchive` o `git` |
+| Enlace `current` | Cambia de versión en un solo paso | `ansible.builtin.file` con `state: link` |
+| Verificación | Confirma que el servicio responde tras el cambio | `ansible.builtin.uri` con `status_code` y, si hace falta, el contenido |
 
-Volver atrás es solo apuntar `current` a la carpeta anterior: la release vieja sigue en el disco. Como
-`estado.json` está **dentro** de cada release, al cambiar el enlace también cambia la versión que publica el nodo.
+Volver atrás es solo apuntar `current` a la carpeta anterior: la release vieja sigue en el disco.
 
 > [!NOTE]
-> Que Ansible termine con `failed=0` no significa que el portal funcione. La release 1.2.0 se copia sin errores
-> y, sin embargo, nginx responde 403 porque le falta `index.html`. Por eso un despliegue acaba siempre con una
-> verificación del servicio, no solo de las tareas.
+> Que Ansible termine con `failed=0` no significa que el servicio funcione. Una release a la que le falta un
+> fichero se copia sin errores y, sin embargo, el servidor web responde 403 o 404. Por eso un despliegue acaba
+> siempre con una verificación del servicio, no solo de las tareas.
 
 ### Sobre qué nodos y cuántos a la vez
 
-| Mecanismo | Dónde se pone | Qué decide | Ejemplo en Tienda Norte |
-|-----------|---------------|------------|-------------------------|
-| Patrón de hosts | `hosts:` del play o argumento de `ansible` | Qué nodos entran | `web`, `prod-web*`, `web:!prod-web2`, `all:!db` |
-| `--limit` | Línea de comandos | Recorta el patrón del play sin editarlo | `--limit prod-web1` |
+| Mecanismo | Dónde se pone | Qué decide | Ejemplo |
+|-----------|---------------|------------|---------|
+| Patrón de hosts | `hosts:` del play o argumento de `ansible` | Qué nodos entran | `webservers`, `web*`, `webservers:!web2`, `all:!dbservers` |
+| `--limit` | Línea de comandos | Recorta el patrón del play sin editarlo | `--limit web1` |
 | `--list-hosts` | Línea de comandos | Enseña los nodos sin ejecutar nada | `ansible-playbook site.yml --list-hosts` |
 | `forks` | `-f` o `ansible.cfg` (por defecto 5) | Cuántos nodos trabajan a la vez **en cada tarea** | `-f 1` |
 | `serial` | Play | Cuántos nodos hacen **el play entero** antes de pasar a los siguientes | `serial: 1` |
@@ -57,15 +55,15 @@ Volver atrás es solo apuntar `current` a la carpeta anterior: la release vieja 
 
 > [!NOTE]
 > `forks` y `serial` se confunden a menudo. Con `-f 1` cada tarea va nodo a nodo, pero **todos** los nodos
-> reciben la tarea 1 antes de que nadie empiece la 2: si la release está rota, acaban rotos los dos web.
-> Con `serial: 1`, `prod-web1` hace el play completo (desplegar y verificar) antes de que `prod-web2` empiece.
+> reciben la tarea 1 antes de que nadie empiece la 2: si la release está rota, acaban rotos todos. Con
+> `serial: 1`, el primer nodo hace el play completo (desplegar y verificar) antes de que el segundo empiece.
 
 ### Estrategias básicas
 
 | Estrategia | Cómo se hace con Ansible | Qué pasa si la release está rota |
 |------------|--------------------------|----------------------------------|
-| Todos a la vez | Play sobre `web`, sin `serial` | Caen los dos web a la vez: el portal entero da error |
-| Por tandas (*rolling*) | `serial: 1` (o `serial: "50%"`) | Cae el primer nodo; el balanceador sigue sirviendo con el otro |
+| Todos a la vez | Play sobre el grupo, sin `serial` | Caen todos los nodos a la vez: el servicio entero da error |
+| Por tandas (*rolling*) | `serial: 1` (o `serial: "50%"`) | Cae el primer nodo; el balanceador sigue sirviendo con los demás |
 | Por tandas con vuelta atrás | `serial` + `block`/`rescue` que restaura `current` + `max_fail_percentage: 0` | El primer nodo vuelve solo a la release anterior y el despliegue se para |
 
 > [!TIP]
