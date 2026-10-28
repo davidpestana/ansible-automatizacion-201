@@ -48,5 +48,5 @@
     state: started
 
 - name: Instalar herramientas de diagnóstico
-  apt:
+  ansible.builtin.apt:
     name: htop
