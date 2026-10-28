@@ -12,12 +12,12 @@ on:
     branches: [main]
     paths:
       - "proyecto/**"
-      - ".github/workflows/validar.yml"
+      - ".github/workflows/**"
   push:
     branches: [main]
     paths:
       - "proyecto/**"
-      - ".github/workflows/validar.yml"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
@@ -30,10 +30,10 @@ jobs:
       ANSIBLE_FORCE_COLOR: "1"
     steps:
       - name: Descargar el repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Preparar Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip

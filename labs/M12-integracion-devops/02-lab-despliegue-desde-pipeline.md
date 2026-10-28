@@ -55,13 +55,17 @@ set-default` hace que `gh` trabaje sobre tu fork y no sobre el repositorio origi
 
 1. Abre **Settings → Environments** y pulsa **New environment**.
 2. En **Name** escribe `prod` y pulsa **Configure environment**.
-3. Marca **Required reviewers** y añádete a ti mismo en el buscador.
+3. Marca **Required reviewers** y añádete a ti mismo en el buscador. Deja **Prevent self-review** sin marcar: en tu
+   fork eres a la vez quien lanza y quien aprueba.
 4. Pulsa **Save protection rules**.
 
 **Por qué:** un job con `environment: prod` no empieza hasta que uno de los revisores lo aprueba. Es la versión
 de plataforma del `CONFIRMAR=si`: en vez de escribirlo quien ejecuta, lo da otra persona, y queda registrado.
 
-**Resultado esperado:** `prod` aparece en **Settings → Environments** con `1 protection rule`.
+**Resultado esperado:** `prod` aparece en **Settings → Environments** con `1 protection rule`. Al abrirlo, tu
+usuario figura bajo **Required reviewers**:
+
+![Entorno prod con revisor obligatorio](../img/M12-02-revisor-prod.png)
 
 ### 3 — Crea `dev` y `pre` sin reglas
 
@@ -74,6 +78,8 @@ adelante.
 
 **Resultado esperado:** en **Settings → Environments** hay tres entornos: `dev`, `pre` y `prod` (solo este con regla).
 
+![Los tres entornos del portal en Settings → Environments](../img/M12-02-entornos.png)
+
 ### 4 — Escribe el workflow
 
 **Acción:** en una rama nueva (`git switch main && git pull && git switch -c ci-desplegar`), crea
@@ -82,6 +88,7 @@ adelante.
 ```yaml
 # .github/workflows/desplegar.yml
 name: Desplegar el portal
+run-name: Desplegar ${{ inputs.version }} en ${{ inputs.entorno }}
 
 on:
   workflow_dispatch:
@@ -115,10 +122,10 @@ jobs:
       VERSION: ${{ inputs.version }}
     steps:
       - name: Descargar el repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Preparar Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -152,6 +159,8 @@ jobs:
 
 - `workflow_dispatch` con `inputs` dibuja un formulario en **Run workflow**: `entorno` es un desplegable con tres
   valores fijos, así nadie despliega en `pord`.
+- `run-name` pone a cada ejecución un título con la versión y el entorno: en **Actions** se distingue qué se
+  desplegó dónde sin abrir cada ejecución.
 - `environment` toma el entorno elegido; en `prod`, el job espera aprobación antes del primer paso.
 - `CONFIRMAR=si` va siempre: la confirmación ya la ha dado el revisor del entorno.
 - `make site` antes de `make deploy`: `make deploy` ejecuta antes `make check`, y en los nodos vacíos del runner el
@@ -231,19 +240,29 @@ por defecto.
 
 **Resultado esperado:** en la pestaña **Actions**, la lista de la izquierda incluye **Desplegar el portal**.
 
+> [!NOTE]
+> Si hiciste el reto 1 del [Lab — Pipeline de validación](01-lab-pipeline-de-validacion.md) (check obligatorio en
+> `main`), `gh pr merge` justo después de crear el pull request responde `Repository rule violations found`:
+> espera antes al check con `gh pr checks --watch` y repite el merge.
+
 ### 8 — Despliega en dev
 
 **Acción** (GitHub): **Actions → Desplegar el portal → Run workflow**. Deja **Use workflow from** en `main`, elige
 **Entorno de destino** `dev`, escribe `1.0.0` en **Versión del portal (x.y.z)** y pulsa **Run workflow**.
 
-Desde el terminal, lo mismo: `gh workflow run desplegar.yml -f entorno=dev -f version=1.0.0`.
+![Formulario de Run workflow con entorno y versión](../img/M12-02-run-workflow.png)
+
+> [!NOTE]
+> `gh workflow run desplegar.yml …` desde el terminal del Codespace responde `HTTP 403: Resource not accessible by
+> integration`: el token que Codespaces da a `gh` puede subir código y abrir pull requests, pero no lanzar
+> workflows. Lánzalos desde **Run workflow**; para seguirlos desde el terminal, `gh run watch` sí funciona.
 
 **Por qué:** dev no tiene reglas: el job arranca enseguida. La 1.0.0 no es la de los `group_vars` de dev (1.1.0),
 así que el despliegue cambia algo de verdad.
 
 **Resultado esperado:** la ejecución aparece en **Actions** con el título **Desplegar 1.0.0 en dev** y termina en
 verde. En el paso **Verificar el portal**, el log muestra el `estado.json` con `"entorno": "dev"` y
-`"version": "1.0.0"`. Con `gh run watch` la sigues desde el terminal.
+`"version": "1.0.0"`. Con `gh run watch` (eliges la ejecución en la lista) la sigues desde el terminal.
 
 ### 9 — Despliega en prod y apruébalo
 
@@ -251,8 +270,17 @@ verde. En el paso **Verificar el portal**, el log muestra el `estado.json` con `
 
 1. **Run workflow** otra vez, con **Entorno de destino** `prod` y versión `1.1.0`.
 2. Abre la ejecución: el job queda en espera con el aviso de que necesita revisión para `prod`.
+
+   ![Despliegue a prod esperando revisión](../img/M12-02-espera-revision.png)
+
 3. Pulsa **Review deployments**, marca `prod`, escribe un comentario (`Promoción de la 1.1.0 aprobada`) y pulsa
    **Approve and deploy**.
+
+   ![Diálogo Review pending deployments con el comentario de aprobación](../img/M12-02-review-deployments.png)
+
+El botón **Start all waiting jobs** de **Deployment protection rules** también arranca el job, pero saltándose la
+revisión: aparece porque eres administrador del fork (opción **Allow administrators to bypass configured
+protection rules** del entorno). No lo uses: la gracia es que quede la aprobación.
 
 **Por qué:** es la separación de funciones que pide un cambio en producción: quien lanza no es necesariamente quien
 aprueba, y las dos cosas quedan en el historial de la ejecución.
@@ -273,7 +301,7 @@ Lanza un despliegue a `prod` y no lo apruebes.
 → El job sigue en espera y ningún paso tiene log. Desde la ejecución puedes cancelarlo con **Cancel workflow**.
 
 **Una versión que no existe no llega al portal**
-Lanza `gh workflow run desplegar.yml -f entorno=pre -f version=1.0.1`.
+Lanza **Run workflow** con **Entorno de destino** `pre` y versión `1.0.1`.
 → El job falla en **Desplegar la versión**: no existe `app/releases/1.0.1`, la copia falla con
 `Could not find or access '…/app/releases/1.0.1/' on the Ansible Controller`, el `rescue` deja la release anterior
 y **Verificar el portal** no llega a ejecutarse.
@@ -288,7 +316,7 @@ qué versión servirá el portal del runner al final?
 <details>
 <summary>Ver solución</summary>
 
-`gh workflow run desplegar.yml -f entorno=prod -f version=1.2.0` y aprueba en **Review deployments**.
+**Run workflow** con `prod` y `1.2.0`, y aprueba en **Review deployments**.
 
 Falla **Desplegar la versión**. En el log, `prod-web1` no pasa **Verificar que el portal responde** (403), el
 `rescue` vuelve a la release anterior y el `always` lo devuelve al balanceador. Con `serial: 1` y
@@ -324,6 +352,7 @@ ese entorno.
 
 | Síntoma | Causa probable | Cómo arreglarlo |
 |---------|----------------|-----------------|
+| `gh workflow run` responde `HTTP 403: Resource not accessible by integration` | El token de `gh` en Codespaces no puede lanzar workflows | Lánzalo desde **Actions → Desplegar el portal → Run workflow** |
 | En **Actions** no aparece el botón **Run workflow** | `desplegar.yml` no está en `main` (la rama por defecto) | Fusiona el pull request del paso 7 |
 | **Desplegar la versión** falla en `make check` con `No package matching 'postgresql' is available` | Falta el paso `make site` antes: `make deploy` ejecuta `validar` y `check`, y el check falla en nodos vacíos | Añade **Instalar el entorno** antes de **Desplegar la versión** |
 | `prod pide CONFIRMAR=si` y `Error 2` | Falta `CONFIRMAR=si` en la línea de `make` | Añádelo: la confirmación la da el revisor del entorno |

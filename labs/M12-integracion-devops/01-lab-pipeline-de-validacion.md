@@ -85,12 +85,12 @@ on:
     branches: [main]
     paths:
       - "proyecto/**"
-      - ".github/workflows/validar.yml"
+      - ".github/workflows/**"
   push:
     branches: [main]
     paths:
       - "proyecto/**"
-      - ".github/workflows/validar.yml"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
@@ -103,10 +103,10 @@ jobs:
       ANSIBLE_FORCE_COLOR: "1"
     steps:
       - name: Descargar el repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Preparar Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -134,7 +134,9 @@ jobs:
 
 - `pull_request` valida cada propuesta antes del merge; `push` a `main` vuelve a validar lo fusionado. No se usa
   `push` a todas las ramas: con un pull request abierto, cada push lanzaría dos ejecuciones iguales.
-- `paths` evita lanzar Ansible por un cambio en `labs/` o en el README.
+- `paths` evita lanzar Ansible por un cambio en `labs/` o en el README. Los cambios en `.github/workflows/` sí se
+  validan: un workflow nuevo también entra por pull request y, si haces obligatorio el check (reto 1), necesita
+  que el check llegue para poder fusionarse.
 - El runner nace vacío: Python, `requirements.txt` y los nodos se preparan en cada ejecución.
 - `make site ENTORNO=pre` va antes de `make check`: el modo check se usa sobre nodos instalados.
 
@@ -213,6 +215,8 @@ y es idempotente en pre, sin que nadie lo haya lanzado a mano.
 ejecución muestra los pasos en el orden del YAML; **Levantar los nodos de prueba** termina con las seis líneas
 `SSH ok` y **Simular en pre (check)** con `changed=0`.
 
+![Ejecución verde del pipeline de validación en Actions](../img/M12-01-check-verde.png)
+
 ### 9 — Fusiona el pipeline
 
 **Acción:**
@@ -260,7 +264,7 @@ gh pr create --base main --head diagnostico-htop --title "Instala htop en los no
 ### 11 — Mira el check en rojo
 
 **Acción:** `gh pr checks --watch` y, cuando termine, `gh run view --log-failed` para ver solo el log del paso
-que ha fallado.
+que ha fallado. `gh run view` te enseña la lista de ejecuciones recientes: elige la de `diagnostico-htop`.
 
 **Por qué:** un check rojo no basta; hay que saber leer **por qué**. El log es el mismo que darías en el terminal.
 
@@ -279,7 +283,10 @@ roles/portal/tasks/main.yml:51:3 Use `ansible.builtin.apt` or `ansible.legacy.ap
 make: *** [Makefile:18: lint] Error 2
 ```
 
-En el pull request, el check aparece con una ✗ roja y el botón de merge avisa de que hay checks fallidos.
+En el pull request, el check aparece con una ✗ roja bajo **All checks have failed**. El botón **Merge pull request**
+sigue activo: nada obliga todavía a que el check esté en verde (eso es el reto 1).
+
+![Pull request con el check de validación en rojo](../img/M12-01-check-rojo.png)
 
 ### 12 — Corrige y vuelve a verde
 
@@ -335,12 +342,20 @@ Haz que no se pueda fusionar en `main` de tu fork ningún pull request cuyo chec
 <details>
 <summary>Ver solución</summary>
 
-En GitHub, en tu fork: **Settings → Rules → Rulesets → New ruleset → New branch ruleset**. Nombre `main protegida`,
-**Enforcement status** `Active`, en **Target branches** añade la rama por defecto y marca
-**Require status checks to pass**; en la lista de checks añade **Lint, syntax, site y check en pre** (aparece
-porque ya se ha ejecutado al menos una vez). Guarda con **Create**.
+En GitHub, en tu fork: **Settings → Rulesets → New ruleset → New branch ruleset**. Nombre `main protegida`,
+**Enforcement status** `Active`, en **Target branches** pulsa **Add target → Include default branch** y marca
+**Require status checks to pass**. Despliega **Show additional settings**, pulsa **Add checks** y añade
+**Lint, syntax, site y check en pre** (aparece porque ya se ha ejecutado al menos una vez). Guarda con **Create**.
 
-Con el pull request de htop sin FQCN, el botón de merge queda bloqueado hasta que el check pase a verde.
+![Ruleset con el check de validación obligatorio](../img/M12-01-ruleset-check-obligatorio.png)
+
+Con el pull request de htop sin FQCN, el check sale marcado como **Required** y **Merge pull request** queda
+desactivado hasta que pase a verde:
+
+![Merge bloqueado por el check obligatorio en rojo](../img/M12-01-merge-bloqueado.png)
+
+Desde el terminal, `gh pr merge` responde `the base branch policy prohibits the merge`. Tú, como administrador del
+fork, podrías saltártelo con `gh pr merge --admin`: en el repositorio del equipo, la persona que propone no lo es.
 
 Ojo con `paths`: un pull request que solo toca `labs/` no lanza el workflow, y con el check obligatorio se queda
 esperando un check que nunca llega. En la práctica se resuelve quitando `paths` del disparador `pull_request` o

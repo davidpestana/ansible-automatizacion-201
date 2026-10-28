@@ -225,6 +225,8 @@ pull request.
 **Resultado esperado:** `gh pr view` muestra el título, `Open` y tu descripción; `gh pr diff` repite el diff del
 paso 4; tras `gh pr review`, la pestaña **Conversation** del pull request muestra tu comentario de revisión.
 
+![Pull request con el comentario de revisión](../img/M10-04-revision-pr.png)
+
 > [!NOTE]
 > GitHub no deja **aprobar** (`gh pr review --approve`) un pull request propio: por eso aquí la revisión es un
 > comentario. En el repositorio del equipo, una regla de protección de `main` exigiría la aprobación de otra
@@ -242,11 +244,12 @@ git pull
 ```
 
 **Por qué:** `--merge` crea un commit de merge cuyo mensaje lleva el número del pull request: desde el historial
-se llega a la revisión. `--delete-branch` borra la rama, que ya no hace falta. `git pull` trae a tu Codespace el
-`main` de GitHub.
+se llega a la revisión. `--delete-branch` borra la rama, en GitHub y en tu Codespace, que ya no hace falta.
+`git switch main` y `git pull` dejan tu Codespace en el `main` de GitHub.
 
-**Resultado esperado:** `gh` confirma el merge y el borrado de la rama, y `git pull` termina en `main` con el
-cambio. `cat proyecto/inventories/prod/host_vars/prod-web2.yml` muestra `portal_worker_connections: 4096`.
+**Resultado esperado:** `gh` confirma el merge y el borrado de la rama. Como al borrar la rama local `gh` ya te
+pasa a `main` y trae el merge, `git switch main` responde `Already on 'main'` y `git pull`, `Already up to date.`
+`cat proyecto/inventories/prod/host_vars/prod-web2.yml` muestra `portal_worker_connections: 4096`.
 
 ### 11 — Sigue la traza del cambio
 
@@ -359,5 +362,5 @@ que no está en ningún sitio revisado, y el siguiente `make site` desde `main` 
 | `gh pr create` propone el repositorio original del curso o pregunta dónde abrir el PR | Falta el repositorio por defecto en un fork | `gh repo set-default "$GITHUB_REPOSITORY"` |
 | Tu trabajo de `proyecto/` ha desaparecido tras `partida.sh` | `partida.sh` sustituye `proyecto/` | Recupéralo de `proyecto.anterior/` antes de volver a cargar otra partida, y haz commit antes la próxima vez |
 | El pull request incluye muchos ficheros además de `prod-web2.yml` | No hiciste el commit del punto de partida en `main` antes de crear la rama | Haz ese commit en `main`, y en la rama `git rebase main`, o crea la rama de nuevo |
-| `gh pr review --approve` falla con un error de GitHub | GitHub no deja aprobar un pull request propio | Usa `gh pr review --comment` |
+| `gh pr review --approve` falla con `Can not approve your own pull request` | GitHub no deja aprobar un pull request propio | Usa `gh pr review --comment` |
 | `git push` responde `rejected … (fetch first)` | `main` de GitHub tiene commits que tu Codespace no tiene | `git pull` y repite el `git push` |

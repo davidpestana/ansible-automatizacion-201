@@ -24,6 +24,8 @@
     8080,
     8081,
     8082,
+    8083,
+    8084,
     8043
   ],
   "portsAttributes": {
@@ -36,11 +38,21 @@
     "8082": {
       "label": "Portal pre"
     },
+    "8083": {
+      "label": "Portal prod-web1"
+    },
+    "8084": {
+      "label": "Portal prod-web2"
+    },
     "8043": {
       "label": "AWX (demo M11)"
     }
   },
-  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt",
+  "remoteEnv": {
+    "CODESPACE_VSCODE_FOLDER": "${containerWorkspaceFolder}",
+    "PATH": "/home/vscode/.venv/bin:${containerEnv:PATH}"
+  },
+  "postCreateCommand": "chmod -R o-w . && python3 -m venv /home/vscode/.venv && /home/vscode/.venv/bin/pip install --no-cache-dir -r requirements.txt",
   "postStartCommand": "bash scripts/red-docker-codespace.sh || true; bash scripts/nodos.sh up || true",
   "customizations": {
     "vscode": {

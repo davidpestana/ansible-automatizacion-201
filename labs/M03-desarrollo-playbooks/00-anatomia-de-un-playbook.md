@@ -2,10 +2,30 @@
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-modulos-principales.md)
 
-El runbook del portal de Tienda Norte es una lista de comandos que alguien teclea por SSH. Para que Ansible los
-haga, esos pasos se escriben en un playbook: un fichero YAML donde cada espacio cuenta. Esta demostración abre un
-playbook pequeño sobre los nodos web, señala cada pieza y después lo rompe a propósito de las formas más
-habituales para ver qué dice ansible-core 2.20 en cada caso y cómo se detecta antes de tocar un nodo.
+Para que Ansible haga los pasos del runbook de Tienda Norte, esos pasos se escriben en un playbook: un
+fichero YAML donde cada espacio cuenta. Esta demostración abre un playbook pequeño sobre los nodos web y
+después lo rompe a propósito.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se recorre un playbook con dos plays y se señala cada pieza.
+2. Se valida sin conectar con los nodos, con `--syntax-check` y `--list-tasks`.
+3. Se ejecuta dos veces.
+4. Se introducen los errores de YAML más habituales: un tabulador, un espacio de más, dos puntos sin espacio, un valor que empieza por `{{` y `yes`/`no` sin comillas.
+5. Se ve qué fallos se escapan a `--syntax-check` y solo aparecen al ejecutar.
+
+**Objetivos**
+
+- Reconocer las piezas de un playbook: plays, `hosts`, `tasks`, módulos y argumentos.
+- Validar un playbook antes de tocar ningún nodo.
+- Relacionar cada error típico con el mensaje de ansible-core 2.20 que lo delata.
+
+**Conclusiones**
+
+- La mayoría de los errores de YAML se detectan sin conectar con los nodos.
+- Algunos fallos solo aparecen al ejecutar, y otros, como `yes`/`no`, no dan error: cambian el valor.
 
 ## Punto de partida
 

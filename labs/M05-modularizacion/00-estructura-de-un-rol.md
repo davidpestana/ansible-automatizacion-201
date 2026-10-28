@@ -2,10 +2,29 @@
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-crear-rol.md)
 
-El portal de pedidos de Tienda Norte vive en un único `portal.yml`: tareas, variables por defecto y plantillas
-mezcladas en un playbook. Antes de partirlo en roles conviene ver qué esqueleto propone Ansible para un rol, dónde
-encaja cada pieza del portal y qué diferencia hay entre los dos sitios donde un rol guarda variables:
-`defaults/` y `vars/`.
+El portal de Tienda Norte vive en un único `portal.yml` que mezcla tareas, variables por defecto y
+plantillas. Esta demostración muestra el esqueleto que propone Ansible para un rol y dónde encaja cada pieza
+del portal antes de partirlo.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se mira el proyecto antes de los roles.
+2. Se genera el esqueleto de un rol con `ansible-galaxy role init`.
+3. Se comprueba qué valor toma una variable definida en `defaults/` del rol.
+4. Se repite con la variable en `vars/`.
+5. Se ve cómo queda el proyecto con roles.
+
+**Objetivos**
+
+- Conocer la estructura estándar de un rol y el papel de cada carpeta.
+- Distinguir `defaults/` de `vars/` por su prioridad frente al inventario.
+
+**Conclusiones**
+
+- Lo configurable va en `defaults/`, porque el inventario puede pisarlo.
+- Lo que va en `vars/` gana al inventario, así que no sirve para valores que cambian por entorno.
 
 ## Punto de partida
 

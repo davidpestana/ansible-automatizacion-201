@@ -80,10 +80,10 @@ jobs:
       ANSIBLE_FORCE_COLOR: "1"
     steps:
       - name: Descargar el repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Preparar Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -146,8 +146,15 @@ git pull
 **Por qué:** el workflow tiene que estar en `main` para reaccionar a los push a `main`.
 
 **Resultado esperado:** **Actions** muestra el workflow **Aplicar main** en la lista de la izquierda. Si el merge
-traía cambios en `proyecto/`, ya hay una primera ejecución; si no, lánzala con
-`gh workflow run aplicar.yml` y espera a verla en verde con `gh run watch`.
+traía cambios en `proyecto/`, ya hay una primera ejecución; si no, lánzala desde **Actions → Aplicar main → Run
+workflow** y espera a verla en verde con `gh run watch`. Desde el terminal del Codespace, `gh workflow run` no
+sirve: responde `HTTP 403: Resource not accessible by integration`, porque el token de Codespaces no puede lanzar
+workflows.
+
+> [!NOTE]
+> Si hiciste el reto 1 del [Lab — Pipeline de validación](01-lab-pipeline-de-validacion.md) (check obligatorio en
+> `main`), `gh pr merge` justo después de crear el pull request responde `Repository rule violations found`:
+> espera antes al check con `gh pr checks --watch` y repite el merge.
 
 ### 4 — Propón la 1.1.0 para prod
 
@@ -222,6 +229,11 @@ gh run watch
 **Resultado esperado:** una ejecución nueva de **Aplicar main** con el título del merge. Termina en verde, y el
 paso **Comprobar que prod sirve la versión de Git** imprime el `estado.json` del balanceador del runner con
 `"version": "1.1.0"`.
+
+![Aplicar main tras el merge, con prod sirviendo la 1.1.0](../img/M12-03-aplicar-main.png)
+
+Si **Aplicar main** aún estaba ejecutándose por otra razón (por ejemplo, la que lanzaste en el paso 3), la nueva
+queda en `pending` hasta que termine: es el `concurrency` del workflow.
 
 ### 7 — Haz en el Codespace lo que el pipeline haría con servidores reales
 
@@ -387,7 +399,7 @@ rama, pull request (validado por `validar.yml`) y merge (aplicado por `aplicar.y
 
 | Síntoma | Causa probable | Cómo arreglarlo |
 |---------|----------------|-----------------|
-| Tras el merge no aparece ninguna ejecución de **Aplicar main** | `aplicar.yml` no estaba en `main` antes del merge, o el cambio no toca `proyecto/` | Fusiona primero el workflow (paso 3); para relanzar, `gh workflow run aplicar.yml` |
+| Tras el merge no aparece ninguna ejecución de **Aplicar main** | `aplicar.yml` no estaba en `main` antes del merge, o el cambio no toca `proyecto/` | Fusiona primero el workflow (paso 3); para relanzar, **Actions → Aplicar main → Run workflow** |
 | **Aplicar prod** falla con `prod pide CONFIRMAR=si` | Falta `CONFIRMAR=si` en la línea de prod | Añádelo: la aprobación ya la dio la revisión del pull request |
 | **Comprobar que prod sirve la versión de Git** falla aunque `Aplicar prod` está en verde | `portal_version` en `group_vars` sin comillas o con otro formato, y el `sed` no lo encuentra | Deja la línea como `portal_version: "1.1.0"`, entre comillas dobles |
 | `make check ENTORNO=prod` no enseña la deriva | El cambio manual se hizo en un fichero que el proyecto no gestiona | Solo se corrige lo que Git describe; `nginx.conf` sí lo gestiona el rol `portal` |

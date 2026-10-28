@@ -78,7 +78,9 @@ está en el producto que hay alrededor.
 > [!NOTE]
 > Los *execution environments* sustituyen a los `virtualenv` de las versiones antiguas de Tower: el job
 > corre dentro de una imagen, no en el Python del servidor. Si un playbook necesita una colección que la
-> imagen no trae, se añade al EE o se declara en un `collections/requirements.yml` del proyecto.
+> imagen no trae, se añade al EE o se declara en un `collections/requirements.yml` del proyecto. El EE que
+> AWX usa por defecto (*AWX EE (latest)*) es mínimo: trae su propia versión de ansible-core, que no tiene por qué
+> coincidir con la del puesto de trabajo, y casi ninguna colección aparte de `ansible.posix`.
 
 ## Enfoque enterprise: quién ejecuta qué en producción
 

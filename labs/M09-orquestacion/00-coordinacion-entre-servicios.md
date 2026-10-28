@@ -2,10 +2,29 @@
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-dependencias.md)
 
-En prod, el portal de pedidos de Tienda Norte son cuatro nodos que dependen unos de otros: las web `prod-web1` y
-`prod-web2` apuntan a la base de datos `prod-db1`, y el balanceador `prod-lb1` reparte entre las dos web. Esta
-demostración recorre qué pasa cuando cada pieza llega en su sitio y cuando no, y cómo un playbook de varios plays
-coordina los tres servicios: el orden de los plays, `hostvars` de otro grupo, `run_once` y `delegate_to`.
+En prod, el portal de Tienda Norte son cuatro nodos que dependen unos de otros: dos web que apuntan a la
+base de datos y un balanceador que reparte entre las web. Esta demostración muestra cómo un playbook de
+varios plays coordina esos servicios.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se ve qué ocurre con las web y el balanceador sin base de datos.
+2. Se invierte el orden: un balanceador sin web detrás.
+3. Se despliegan base de datos, web y balanceador, en ese orden.
+4. Un play lee lo que descubrió otro, con `hostvars`, `run_once` y `delegate_to`.
+
+**Objetivos**
+
+- Ver qué falla cuando un servicio llega antes que aquel del que depende.
+- Coordinar varios servicios con el orden de los plays.
+- Compartir datos entre plays y controlar dónde corre cada tarea.
+
+**Conclusiones**
+
+- El orden de los plays es lo que coordina base de datos → web → balanceador.
+- `hostvars`, `run_once` y `delegate_to` permiten que un play use datos de otros grupos y actúe sobre ellos.
 
 ## Punto de partida
 

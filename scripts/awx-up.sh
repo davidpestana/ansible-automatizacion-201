@@ -16,7 +16,10 @@ done
 COREFILE="$(mktemp)"
 trap 'rm -f "$COREFILE" "$COREFILE.nuevo"' EXIT
 
-bash "$RAIZ/scripts/nodos.sh" up >/dev/null
+# Si los nodos ya corren no se tocan: recrearlos borraría lo que dejó scripts/partida.sh.
+if [ "$(docker ps -q --filter name=^prod- | wc -l)" -lt 4 ]; then
+  bash "$RAIZ/scripts/nodos.sh" up >/dev/null
+fi
 bash "$RAIZ/scripts/kind-net-fix.sh" || true
 if ! kind get clusters 2>/dev/null | grep -qx "$CLUSTER"; then
   env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
@@ -37,6 +40,9 @@ if ! grep -q 'hosts {' $COREFILE; then
 fi
 
 kubectl create namespace awx --dry-run=client -o yaml | kubectl apply -f -
+# La primera vez el recurso AWX llega antes de que exista su CRD: se aplica otra vez cuando ya está.
+kubectl apply -k "$RAIZ/infra/awx" 2>/dev/null || true
+kubectl wait --for=condition=Established crd/awxs.awx.ansible.com --timeout=120s
 kubectl apply -k "$RAIZ/infra/awx"
 echo "Esperando a AWX (varios minutos la primera vez)…"
 for _ in $(seq 1 120); do

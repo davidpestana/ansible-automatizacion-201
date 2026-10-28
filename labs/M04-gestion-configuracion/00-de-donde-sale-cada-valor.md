@@ -3,10 +3,28 @@
 [← Página anterior](README.md) · [Siguiente página →](01-lab-group-vars-host-vars.md)
 
 El portal de Tienda Norte tiene que salir verde en prod, ámbar en pre y azul en dev, y algún nodo necesita
-un ajuste propio. Antes de mover los valores del portal a ficheros, conviene saber dónde puede vivir una
-variable y cuál de esos sitios gana. En esta demostración, la misma variable, `portal_color`, se define en
-cinco sitios del proyecto, uno detrás de otro, y después de cada cambio se consulta qué valor recibe cada
-nodo de prod.
+un ajuste propio. Esta demostración define la misma variable, `portal_color`, en varios sitios del proyecto y,
+después de cada cambio, consulta qué valor recibe cada nodo de prod.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se parte de un `portal.yml` con la versión y el color escritos a mano.
+2. Se define `portal_color` en el inventario, en `group_vars/all.yml`, en `group_vars/web.yml` y en `host_vars/prod-web2.yml`, comprobando el valor de cada nodo tras cada paso.
+3. Se impone un valor con `-e` en la línea de comandos.
+4. Se define la variable en las `vars:` del play.
+
+**Objetivos**
+
+- Conocer los sitios donde puede vivir una variable.
+- Saber cuál gana cuando la misma variable está en varios.
+- Consultar el valor que recibe cada nodo sin cambiar nada.
+
+**Conclusiones**
+
+- Gana el sitio más concreto: el nodo a su grupo, y un grupo a `all`.
+- Las `vars:` del play y `-e` se imponen a todo lo que viene del inventario.
 
 ## Punto de partida
 

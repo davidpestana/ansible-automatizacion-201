@@ -9,12 +9,35 @@ RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
 export CLAVES_DIR="${CLAVES_DIR:-$HOME/.ssh/curso-ansible}"
 COMPOSE=(docker compose -f "$RAIZ/infra/compose.yaml")
 NODOS=(dev-web1 pre-web1 prod-lb1 prod-web1 prod-web2 prod-db1)
+IMAGEN=tienda-norte/nodo:1
+
+# Una sola ejecución a la vez (postStartCommand y el alumno pueden coincidir)
+if [ -z "${NODOS_BLOQUEO:-}" ]; then
+  exec 9>"${TMPDIR:-/tmp}/tienda-norte-nodos.lock"
+  flock 9
+  export NODOS_BLOQUEO=1
+fi
 
 clave() {
+  # Si Docker arrancó los nodos antes que este script, creó la carpeta del volumen como root
+  if [ -d "$CLAVES_DIR" ] && [ ! -w "$CLAVES_DIR" ]; then
+    sudo chown -R "$(id -u):$(id -g)" "$HOME/.ssh"
+  fi
   if [ ! -f "$CLAVES_DIR/curso_ansible" ]; then
     mkdir -p "$CLAVES_DIR" && chmod 700 "$CLAVES_DIR"
     ssh-keygen -q -t ed25519 -N '' -C curso-ansible -f "$CLAVES_DIR/curso_ansible"
     echo "Clave del curso creada en $CLAVES_DIR/curso_ansible"
+    CLAVE_NUEVA=1
+  fi
+}
+
+imagen() {
+  # Cada docker build da un ID nuevo y Compose recrearía los nodos (perdiendo su estado):
+  # solo se construye si falta la imagen o ha cambiado infra/nodo/
+  local huella
+  huella="$(cat "$RAIZ"/infra/nodo/* | sha256sum | cut -c1-16)"
+  if [ "$(docker image inspect -f '{{index .Config.Labels "tienda-norte.huella"}}' "$IMAGEN" 2>/dev/null)" != "$huella" ]; then
+    docker build -q --label "tienda-norte.huella=$huella" -t "$IMAGEN" "$RAIZ/infra/nodo" >/dev/null
   fi
 }
 
@@ -43,8 +66,10 @@ case "${1:-up}" in
   up)
     clave
     bash "$RAIZ/scripts/red-docker-codespace.sh" >/dev/null 2>&1 || true
-    docker build -q -t tienda-norte/nodo:1 "$RAIZ/infra/nodo" >/dev/null
+    imagen
     "${COMPOSE[@]}" up -d 2>&1 | grep -v -e '^ *$' || true
+    # Los nodos instalan la clave pública al arrancar: si es nueva, se reinician (conservan su estado)
+    if [ -n "${CLAVE_NUEVA:-}" ]; then "${COMPOSE[@]}" restart >/dev/null 2>&1; fi
     esperar_ssh; estado ;;
   reset)
     "${COMPOSE[@]}" down -v --remove-orphans

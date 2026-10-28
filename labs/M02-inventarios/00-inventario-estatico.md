@@ -2,10 +2,30 @@
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-grupos-y-jerarquias.md)
 
-Antes de lanzar nada contra los nodos del portal de Tienda Norte, Ansible necesita saber cuáles son. Esa
-lista es el **inventario**. Esta demostración recorre el inventario de partida del proyecto, escrito en INI,
-lo reescribe en YAML para ver que dicen lo mismo y lo consulta con `ansible-inventory`. Termina con los
-patrones, que eligen sobre qué nodos actúa cada ejecución.
+Antes de lanzar nada contra los nodos del portal de Tienda Norte, Ansible necesita saber cuáles son. Esta
+demostración recorre el **inventario** de partida del proyecto.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se lee el inventario en INI.
+2. Se mira su árbol de grupos con `ansible-inventory --graph`.
+3. Se consulta como datos con `ansible-inventory --list`.
+4. Se reescribe en YAML y se comprueba que dice lo mismo.
+5. Se prueban **patrones** para elegir nodos, sin tocarlos, con `--list-hosts`.
+6. Se usa un patrón en una ejecución real.
+
+**Objetivos**
+
+- Entender qué es un inventario estático y cómo lo elige Ansible (`ansible.cfg` o `-i`).
+- Comprobar qué entiende Ansible del fichero, incluidos los grupos implícitos `all` y `ungrouped`.
+- Elegir sobre qué nodos actúa cada ejecución.
+
+**Conclusiones**
+
+- INI y YAML son dos formatos del mismo inventario: Ansible los interpreta igual.
+- Antes de tocar ningún nodo se puede saber exactamente a cuáles afecta un patrón.
 
 ## Punto de partida
 

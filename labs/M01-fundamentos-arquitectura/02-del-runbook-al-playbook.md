@@ -1,12 +1,32 @@
 # Del runbook al playbook
 
-[← Página anterior](00-que-es-ansible.md) · [Siguiente página →](02-lab-conexion-agentless.md)
+[← Página anterior](01-lab-instalar-y-configurar.md) · [Siguiente página →](03-lab-conexion-agentless.md)
 
-El runbook del portal de Tienda Norte empieza siempre igual: entrar por SSH en cada servidor, crear la carpeta
-`/srv/portal` y dejar en `/etc/motd` un aviso de que el nodo es del portal. Son dos pasos sencillos, pero se
-repiten en seis nodos y nadie comprueba que hayan quedado iguales. Esta demostración muestra esos mismos pasos
-convertidos en un proyecto Ansible: un **inventario** con los seis nodos, un **playbook** con tres tareas y los
-**módulos** que las resuelven, ejecutado dos veces para ver qué significa que sea **idempotente**.
+El runbook de Tienda Norte repite a mano, por SSH y en seis nodos, los mismos pasos: crear la carpeta
+`/srv/portal` y dejar en `/etc/motd` un aviso de que el nodo es del portal. Esta demostración convierte esos
+pasos en un proyecto Ansible.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se mira el estado de partida de un nodo.
+2. Se recorre el **inventario**, que dice a qué nodos se apunta.
+3. Se lee el **playbook**: un play con tres tareas y los **módulos** que las resuelven.
+4. Se ejecuta el playbook por primera vez.
+5. Se ejecuta por segunda vez, sin cambiar nada.
+6. Se comprueba el resultado en el nodo.
+
+**Objetivos**
+
+- Identificar las piezas mínimas de un proyecto Ansible: inventario, `ansible.cfg`, playbook, tareas y módulos.
+- Leer la salida de `ansible-playbook`: `ok`, `changed` y el `PLAY RECAP`.
+- Ver qué significa que una ejecución sea **idempotente**.
+
+**Conclusiones**
+
+- Unos pasos de runbook se expresan como tareas que se aplican igual en todos los nodos.
+- Repetir la ejecución no vuelve a cambiar nada: `changed=0` es la prueba de la idempotencia.
 
 ## Punto de partida
 
@@ -259,5 +279,5 @@ que ahora es lo primero que ve quien entra por SSH. Lo mismo ha pasado en los ot
 - Una segunda ejecución con `changed=0` demuestra la **idempotencia**.
 
 La conexión con los nodos y los comandos ad hoc se practican en el
-[Lab — Conexión agentless](02-lab-conexion-agentless.md), y escribir este playbook paso a paso, en el
-[Lab — Primer playbook](03-lab-primer-playbook.md). Los dos se pueden hacer sin haber seguido esta demostración.
+[Lab — Conexión agentless](03-lab-conexion-agentless.md), y escribir este playbook paso a paso, en el
+[Lab — Primer playbook](04-lab-primer-playbook.md). Los dos se pueden hacer sin haber seguido esta demostración.

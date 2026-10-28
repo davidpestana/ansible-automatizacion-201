@@ -2,10 +2,30 @@
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-despliegue-completo.md)
 
-Tienda Norte tiene el portal 1.0.0 en prod y el equipo de producto ha entregado la 1.1.0, con seguimiento de
-pedidos. Esta demostración abre un despliegue por dentro, sobre `prod-web1` y `prod-web2`: dónde queda cada
-release, qué hace el enlace `current`, qué publica `estado.json` y por qué hace falta verificar el portal
-después de desplegar, aunque Ansible diga que todo ha ido bien.
+Tienda Norte tiene el portal 1.0.0 en prod y el equipo de producto ha entregado la 1.1.0. Esta
+demostración abre un despliegue por dentro, sobre `prod-web1` y `prod-web2`.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se leen las tareas de despliegue del rol.
+2. Se mira cómo está instalada la release actual en un nodo.
+3. Se despliega la 1.1.0 con `-e portal_version=…` y `--tags despliegue`.
+4. Se comprueba que conviven las dos releases y adónde apunta `current`.
+5. Se verifica el portal con `ansible.builtin.uri`.
+6. Se despliega una release rota, la 1.2.0, y se vuelve a la 1.1.0.
+
+**Objetivos**
+
+- Entender cómo se organiza una release en el nodo y qué papel tiene el enlace `current`.
+- Elegir la versión y limitar el trabajo de una ejecución.
+- Ver por qué hace falta verificar después de desplegar.
+
+**Conclusiones**
+
+- Cambiar de versión, hacia delante o hacia atrás, es mover un enlace.
+- Que las tareas salgan en verde no garantiza que el portal funcione.
 
 ## Punto de partida
 

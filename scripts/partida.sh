@@ -22,6 +22,8 @@ if [ -d "$RAIZ/proyecto" ]; then
   mv "$RAIZ/proyecto" "$RAIZ/proyecto.anterior"
 fi
 cp -r "$RAIZ/partidas/$ESTADO" "$RAIZ/proyecto"
+# Ansible ignora el ansible.cfg de un directorio escribible por todos (el clon de Codespaces lo es)
+chmod -R o-w "$RAIZ/proyecto"
 if [ -f "$RAIZ/partidas/$ESTADO.sh" ]; then
   echo "Preparando los nodos para $ESTADO…"
   (cd "$RAIZ/proyecto" && bash "$RAIZ/partidas/$ESTADO.sh")

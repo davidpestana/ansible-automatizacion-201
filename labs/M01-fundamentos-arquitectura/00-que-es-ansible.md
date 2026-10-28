@@ -1,6 +1,6 @@
 # Qué es Ansible
 
-[← Página anterior](README.md) · [Siguiente página →](01-del-runbook-al-playbook.md)
+[← Página anterior](README.md) · [Siguiente página →](01-lab-instalar-y-configurar.md)
 
 Ansible es una herramienta de código abierto para la automatización de la tecnología de la información (TI)
 que permite configurar servidores, desplegar aplicaciones y gestionar infraestructuras a gran escala de forma
@@ -139,6 +139,7 @@ actual del nodo y solo cambia lo que no coincide.
 
 El curso sigue el caso de una empresa ficticia, Tienda Norte, que mantiene su portal de pedidos con un runbook
 manual sobre seis servidores Debian en tres entornos. El nodo de control es el Codespace (`ansible-core` 2.20) y
-los nodos son contenedores con SSH. La [demostración](01-del-runbook-al-playbook.md) convierte los primeros
+los nodos son contenedores con SSH. En el [Lab — Instalar y configurar Ansible](01-lab-instalar-y-configurar.md)
+instalas y configuras un nodo de control desde cero. La [demostración](02-del-runbook-al-playbook.md) convierte los primeros
 pasos de ese runbook en un inventario y un playbook, y el
-[Lab — Conexión agentless](02-lab-conexion-agentless.md) comprueba que en los nodos no queda nada de Ansible.
+[Lab — Conexión agentless](03-lab-conexion-agentless.md) comprueba que en los nodos no queda nada de Ansible.

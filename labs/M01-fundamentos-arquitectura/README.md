@@ -12,6 +12,10 @@ trabajo y playbooks que encadenan ese trabajo de forma repetible e idempotente.
 
 - Explicar qué hace el nodo de control y qué necesita cada nodo gestionado: SSH, Python y un usuario con
   `sudo`, nada más.
+- Instalar Ansible en un entorno virtual con una versión fijada, configurarlo con `ansible.cfg` y saber de
+  dónde sale cada ajuste (`ansible-config dump --only-changed`).
+- Seguir una ejecución por dentro con `-vvv`: el módulo empaquetado (AnsiballZ) que viaja al nodo, se ejecuta
+  con su Python y se borra.
 - Describir varios nodos en un inventario y comprobar que Ansible llega a todos con `ansible all -m ping`.
 - Lanzar módulos ad hoc (`command`, `setup`) para consultar muchos nodos de una vez, sin entrar en ellos uno a uno.
 - Comprobar en un nodo gestionado que Ansible no deja ningún proceso ni paquete instalado.
@@ -67,9 +71,10 @@ Cada tarea devuelve un estado por nodo, y el `PLAY RECAP` final los cuenta:
 | # | Página | Qué hay |
 |---|--------|---------|
 | 00 | [Qué es Ansible](00-que-es-ansible.md) | Para qué sirve, casos de uso y cómo trabaja sin agente |
-| 01 | [Del runbook al playbook](01-del-runbook-al-playbook.md) | Demostración: el runbook del portal frente a un inventario, un playbook y sus módulos, ejecutado dos veces |
-| 02 | [Lab — Conexión agentless](02-lab-conexion-agentless.md) | Conectas por SSH con los nodos y lanzas módulos ad hoc desde el Codespace |
-| 03 | [Lab — Primer playbook](03-lab-primer-playbook.md) | Escribes y ejecutas un playbook que prepara los nodos web |
+| 01 | [Lab — Instalar y configurar Ansible](01-lab-instalar-y-configurar.md) | Instalas Ansible desde cero en un entorno virtual, lo configuras con ansible.cfg, ves qué hace en el nodo en cada ejecución e instalas una colección |
+| 02 | [Del runbook al playbook](02-del-runbook-al-playbook.md) | Demostración: el runbook del portal frente a un inventario, un playbook y sus módulos, ejecutado dos veces |
+| 03 | [Lab — Conexión agentless](03-lab-conexion-agentless.md) | Conectas por SSH con los nodos y lanzas módulos ad hoc desde el Codespace |
+| 04 | [Lab — Primer playbook](04-lab-primer-playbook.md) | Escribes y ejecutas un playbook que prepara los nodos web |
 
 → Empieza por **[00 — Qué es Ansible](00-que-es-ansible.md)**.
 <!-- /gen:paginas -->

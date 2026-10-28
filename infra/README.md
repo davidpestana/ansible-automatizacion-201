@@ -58,7 +58,8 @@ configuración. Tarda varios minutos. `scripts/awx-down.sh` lo borra.
 | Síntoma | Causa probable | Cómo arreglarlo |
 |---------|----------------|-----------------|
 | `UNREACHABLE! … Connection timed out` en todos los nodos | Los nodos no están levantados (Codespace recién reanudado) | `scripts/nodos.sh up` |
-| `Permission denied (publickey)` | La clave del curso no coincide con la de los nodos (se borró `~/.ssh/curso-ansible`) | `scripts/nodos.sh reset` |
+| `Permission denied (publickey)` | La clave del curso no coincide con la de los nodos (se borró `~/.ssh/curso-ansible`) | `scripts/nodos.sh up`; si sigue, `scripts/nodos.sh reset` |
+| `[WARNING]: Ansible is being run in a world writable directory …, ignoring it as an ansible.cfg source` | La carpeta tiene permiso de escritura para todos y Ansible no lee su `ansible.cfg` | `chmod -R o-w proyecto` desde la raíz del repositorio |
 | `apt` falla dentro de un nodo con `Temporary failure resolving` o se queda colgado, pero `curl` desde el terminal del Codespace sí funciona | Red de Docker en Codespaces: reglas `iptables-legacy` que descartan el tráfico de las redes de Compose | `bash scripts/red-docker-codespace.sh` y repite. Comprobación: `docker exec prod-web1 curl -sI https://deb.debian.org` |
 | `Could not find or access '…/app/releases/…'` | Ansible se lanzó fuera de `proyecto/` | `cd proyecto` y repite |
 | Tras `scripts/partida.sh`, el terminal dice `getcwd: cannot access parent directories` | El terminal estaba dentro de la carpeta `proyecto/` que se ha sustituido | `cd "$CODESPACE_VSCODE_FOLDER/proyecto"` (la propia salida de `partida.sh` te da la ruta) |

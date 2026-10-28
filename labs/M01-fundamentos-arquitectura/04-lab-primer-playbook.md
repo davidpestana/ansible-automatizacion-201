@@ -1,6 +1,6 @@
 # Lab — Primer playbook
 
-[← Página anterior](02-lab-conexion-agentless.md) · [Siguiente página →](../M02-inventarios/README.md)
+[← Página anterior](03-lab-conexion-agentless.md) · [Siguiente página →](../M02-inventarios/README.md)
 
 Los dos primeros pasos del runbook de Tienda Norte (crear la carpeta `/srv/portal` y dejar en `/etc/motd` el aviso
 de que el nodo es del portal) se repiten a mano en cada servidor. En este lab los conviertes en

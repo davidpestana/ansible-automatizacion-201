@@ -2,10 +2,31 @@
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-pipeline-de-validacion.md)
 
-Hasta ahora, en Tienda Norte, `make validar` y `make check` los lanza una persona desde su Codespace, y el
-resultado solo lo ve ella. En esta demostración, el mismo proyecto del portal se valida **solo**, en GitHub
-Actions, cada vez que alguien abre un pull request: un runner levanta nodos de prueba, ejecuta el `Makefile` y
-deja el log de cada paso en la pestaña **Actions**, enlazado al commit.
+Hasta ahora, en Tienda Norte, `make validar` y `make check` los lanza una persona desde su Codespace y el
+resultado solo lo ve ella. Esta demostración hace que el proyecto del portal se valide solo, en GitHub Actions,
+cada vez que alguien abre un pull request.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se lee el fichero del workflow.
+2. Se ve cómo el runner hace de nodo de control.
+3. Se levantan los nodos de prueba dentro del runner.
+4. Se valida con `make validar`.
+5. Se aplica y después se simula sobre pre.
+6. Se revisa el resultado en **Actions** y en el pull request.
+
+**Objetivos**
+
+- Entender cómo un pipeline convierte una máquina efímera en nodo de control.
+- Reutilizar el `Makefile` del proyecto en el pipeline.
+- Ver dónde quedan el log y el resultado de cada paso.
+
+**Conclusiones**
+
+- El pipeline ejecuta lo mismo que una persona en su terminal, pero en cada pull request y con el log a la vista.
+- El resultado de la validación queda ligado al commit y al pull request.
 
 ## Punto de partida
 
@@ -49,10 +70,10 @@ deja el log de cada paso en la pestaña **Actions**, enlazado al commit.
          ANSIBLE_FORCE_COLOR: "1"
        steps:
          - name: Descargar el repositorio
-           uses: actions/checkout@v4
+           uses: actions/checkout@v7
 
          - name: Preparar Python 3.12
-           uses: actions/setup-python@v5
+           uses: actions/setup-python@v7
            with:
              python-version: "3.12"
              cache: pip
@@ -78,7 +99,7 @@ deja el log de cada paso en la pestaña **Actions**, enlazado al commit.
 
    `on` dice cuándo corre: en cada pull request contra `main` y en cada push a `main`, pero solo si el cambio toca
    `proyecto/` o el propio workflow. Un cambio en `labs/` no gasta un runner. Las versiones de las actions están
-   fijadas (`@v4`, `@v5`) para que el pipeline no cambie solo de un día para otro.
+   fijadas (`@v7`) para que el pipeline no cambie solo de un día para otro.
 
 2. **El runner.** `runs-on: ubuntu-24.04` pide a GitHub una máquina virtual Ubuntu nueva, que hace de **nodo de
    control** igual que el Codespace. Nace vacía: por eso los primeros pasos descargan el repositorio

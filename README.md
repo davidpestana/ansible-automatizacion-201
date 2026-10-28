@@ -57,9 +57,9 @@ contenedores: solo hace falta una cuenta de GitHub.
 - **[M01 — Fundamentos y arquitectura](labs/M01-fundamentos-arquitectura/README.md)**
   - [Qué es Ansible y casos de uso](labs/M01-fundamentos-arquitectura/00-que-es-ansible.md)
   - [Arquitectura y modelo agentless](labs/M01-fundamentos-arquitectura/00-que-es-ansible.md)
-  - [Inventario, playbooks y módulos](labs/M01-fundamentos-arquitectura/01-del-runbook-al-playbook.md)
-  - [Idempotencia](labs/M01-fundamentos-arquitectura/01-del-runbook-al-playbook.md)
-  - [Primer playbook y ejecución sobre nodos](labs/M01-fundamentos-arquitectura/03-lab-primer-playbook.md)
+  - [Inventario, playbooks y módulos](labs/M01-fundamentos-arquitectura/02-del-runbook-al-playbook.md)
+  - [Idempotencia](labs/M01-fundamentos-arquitectura/02-del-runbook-al-playbook.md)
+  - [Primer playbook y ejecución sobre nodos](labs/M01-fundamentos-arquitectura/04-lab-primer-playbook.md)
 - **[M02 — Inventarios](labs/M02-inventarios/README.md)**
   - [Inventario estático](labs/M02-inventarios/00-inventario-estatico.md)
   - [Grupos y jerarquías](labs/M02-inventarios/01-lab-grupos-y-jerarquias.md)

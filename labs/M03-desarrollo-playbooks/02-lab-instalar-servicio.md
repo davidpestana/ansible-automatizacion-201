@@ -245,6 +245,13 @@ dev-web1                   : ok=10   changed=1    unreachable=0    failed=0    s
 La recarga sale `skipping`: el sitio cambió en la ejecución del paso 4, no en esta, y `register` solo ve lo que
 pasa en la ejecución en curso. En la pestaña **Puertos** del Codespace, el puerto 8081 abre el portal de dev.
 
+![Pestaña Puertos del Codespace con los puertos 8080 a 8084 del portal](../img/M03-02-pestana-puertos.png)
+
+Al abrir la dirección reenviada del 8081 (el icono del globo al pasar por encima), el navegador muestra el portal
+de dev en la 1.0.0:
+
+![Portal de pedidos de dev en el navegador, versión 1.0.0](../img/M03-02-portal-dev-navegador.png)
+
 ### 7 — Comprueba que la recarga funciona
 
 **Acción:** añade la línea `add_header X-Portal tienda-norte;` dentro del bloque `server` de `files/portal.conf`,

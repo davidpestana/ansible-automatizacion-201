@@ -2,11 +2,29 @@
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-condicionales-y-bucles.md)
 
-El equipo de operaciones de Tienda Norte quiere tres cosas a la vez en los servidores web del portal: tener `jq` y
-`tree` a mano para diagnosticar, que nginx deje de anunciar su versión exacta en cada respuesta y que las respuestas
-de producción lleven una cabecera que diga que son de producción. Esta demostración recorre un único playbook,
-`flujo.yml`, que lo hace con un bucle, una condición y un handler, y mira en la salida de `ansible-playbook` en qué
-orden ocurre cada cosa y cuántas veces.
+Operaciones de Tienda Norte quiere en los servidores web del portal `jq` y `tree` para diagnosticar, que
+nginx no anuncie su versión exacta y que las respuestas de producción lo indiquen en una cabecera. Esta
+demostración lo resuelve con un único playbook, `flujo.yml`.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se lee el playbook: un bucle, una condición y un handler.
+2. Se ejecuta en producción.
+3. Se comprueba el efecto en las respuestas.
+4. Se ejecuta otra vez, sin cambios.
+5. Se ejecuta el mismo playbook en dev.
+
+**Objetivos**
+
+- Ver cómo `loop` repite una tarea y cómo `when` la salta en los nodos que no cumplen.
+- Seguir en la salida cuándo se notifica un handler y cuándo se ejecuta.
+
+**Conclusiones**
+
+- El orden y el número de veces que corre cada cosa se leen en la salida de `ansible-playbook`.
+- Un handler solo corre si algo ha cambiado, al final y una vez por nodo.
 
 ## Punto de partida
 

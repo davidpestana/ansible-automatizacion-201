@@ -1,6 +1,6 @@
 # Lab — Conexión agentless
 
-[← Página anterior](01-del-runbook-al-playbook.md) · [Siguiente página →](03-lab-primer-playbook.md)
+[← Página anterior](02-del-runbook-al-playbook.md) · [Siguiente página →](04-lab-primer-playbook.md)
 
 El primer paso del runbook de Tienda Norte es «entrar por SSH en el servidor». Antes de automatizar nada, el
 equipo de operaciones quiere comprobar que desde el Codespace se llega a los seis nodos del portal con el usuario
@@ -384,6 +384,7 @@ con el usuario y la clave que salen de `ansible.cfg`.
 | Síntoma | Causa probable | Cómo arreglarlo |
 |---------|----------------|-----------------|
 | `No inventory was parsed, only implicit localhost is available` y ningún nodo responde | Estás fuera de `proyecto/` (Ansible no encuentra `ansible.cfg`) o falta `inventario.ini` | `cd "$CODESPACE_VSCODE_FOLDER/proyecto"` y comprueba con `ls` que está `inventario.ini` |
+| `[WARNING]: Ansible is being run in a world writable directory (…/proyecto), ignoring it as an ansible.cfg source` | `proyecto/` tiene permiso de escritura para todos y Ansible no se fía de su `ansible.cfg` | Desde la raíz del repositorio, `chmod -R o-w proyecto` (`scripts/partida.sh` ya lo deja así) |
 | `ssh: Could not resolve hostname dev-web1` al entrar a mano | Has lanzado `ssh dev-web1` sin `-F ../infra/ssh_config`, que es quien sabe la IP de cada nodo | `ssh -F ../infra/ssh_config dev-web1`, desde `proyecto/` |
 | `UNREACHABLE! … Could not resolve hostname prod-web3` | Nombre mal escrito en el inventario: no existe en `infra/ssh_config` | Corrige la línea en `inventario.ini` y repite `ansible-inventory --graph` |
 | `UNREACHABLE! … Connection timed out` en todos los nodos | Los nodos no están levantados (Codespace recién reanudado) | Desde la raíz del repositorio, `scripts/nodos.sh up` |

@@ -4,10 +4,30 @@
 
 Operaciones de Tienda Norte quiere que el despliegue de prod deje de depender de quién tiene la clave SSH
 en su Codespace. En esta demostración, el mismo `proyecto/deploy.yml` que se lanza con `make deploy` pasa a
-lanzarse desde AWX: el repositorio del fork como proyecto, el inventario de prod sincronizado desde Git, la
-clave del usuario `ansible` guardada como credencial y una plantilla «Desplegar portal» que un equipo de
-guardia puede lanzar sin poder cambiarla. Al final, la salida del job, sus eventos por host y el rastro de
-quién hizo qué.
+lanzarse desde AWX.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se da de alta el fork como proyecto de AWX dentro de la organización Tienda Norte.
+2. Se guarda la clave del usuario `ansible` como credencial Machine, por la API y sin mostrarla.
+3. Se sincroniza el inventario de prod desde `proyecto/inventories/prod/hosts.yml`.
+4. Se crea la plantilla «Desplegar portal» con una encuesta de versión y se lanza con la 1.1.0 y con la 1.2.0.
+5. Se da a un equipo de guardia permiso para lanzar la plantilla, pero no para cambiarla.
+6. Se revisan los jobs y el Activity Stream para saber quién lanzó y quién cambió qué.
+
+**Objetivos**
+
+- Reconocer en AWX el proyecto del curso: proyecto, inventario, credencial y plantilla.
+- Leer la salida de un job y su detalle: versión pedida, commit ejecutado y quién lo lanzó.
+- Ver cómo se reparte el permiso de lanzar sin dar el de editar ni el de ver la clave.
+
+**Conclusiones**
+
+- El playbook no cambia: rollback, `serial` y verificación siguen siendo cosa de `deploy.yml`.
+- La clave queda cifrada en AWX y nadie la vuelve a ver, ni por la interfaz ni por la API.
+- Cada ejecución y cada cambio de configuración queda registrado con su usuario.
 
 ## Punto de partida
 
@@ -31,10 +51,10 @@ quién hizo qué.
   ```text
   Preparando los nodos para m11…
   PLAY RECAP *********************************************************************
-  prod-db1                   : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-  prod-lb1                   : ok=4    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
-  prod-web1                  : ok=11   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-  prod-web2                  : ok=11   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+  prod-db1                   : ok=9    changed=7    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+  prod-lb1                   : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+  prod-web1                  : ok=12   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+  prod-web2                  : ok=12   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 
   Listo: proyecto/ en el punto de partida «m11» (lo anterior está en proyecto.anterior/).
   ```
@@ -64,7 +84,8 @@ quién hizo qué.
   scripts/awx-up.sh
   ```
 
-  Termina con `AWX listo: http://localhost:8043`, el usuario `admin` y su contraseña. La contraseña se
+  Termina con `AWX listo: http://localhost:8043`, el usuario `admin` y su contraseña. Si los nodos ya están
+  en marcha, el script no los toca, así que el estado que dejó `partida.sh m11` se conserva. La contraseña se
   puede volver a consultar en cualquier momento:
 
   ```bash
@@ -78,8 +99,9 @@ quién hizo qué.
 
 ### 1 — La entrada en AWX
 
-Tras iniciar sesión como `admin`, AWX abre el **Dashboard**: contadores de hosts, proyectos, inventarios y
-un gráfico de jobs, todos a cero. El menú lateral agrupa lo que se usa en la demo:
+Tras iniciar sesión como `admin`, AWX abre el **Dashboard**: contadores de hosts, proyectos e inventarios y
+un gráfico de jobs. No empiezan en cero: AWX trae de ejemplo `Demo Project`, `Demo Inventory` (con
+`localhost`) y `Demo Job Template`, que la demo no usa. El menú lateral agrupa lo que se usa en la demo:
 
 | Sección del menú | Entradas | Para qué en la demo |
 |------------------|----------|---------------------|
@@ -87,6 +109,15 @@ un gráfico de jobs, todos a cero. El menú lateral agrupa lo que se usa en la d
 | **Resources** | Templates, Credentials, Projects, Inventories, Hosts | Lo que hace falta para ejecutar `deploy.yml` |
 | **Access** | Organizations, Users, Teams | Quién puede hacer qué |
 | **Administration** | Execution Environments, Instance Groups, … | La imagen en la que corre cada job |
+
+![Menú lateral de AWX con las secciones Views, Resources, Access y Administration](../img/M11-01-menu-awx.png)
+
+> [!NOTE]
+> La interfaz sale en el idioma del navegador. En español, las secciones son **Vistas** (Panel de control,
+> Trabajos, Programaciones, Flujo de actividad), **Recursos** (Plantillas, Credenciales, Proyectos,
+> Inventarios, Servidores), **Acceso** (Organizaciones, Usuarios, Equipos) y **Administración** (Entornos de
+> ejecución, Grupos de instancias…). Los botones también cambian: **Add** es **Agregar** y **Save**,
+> **Guardar**. Esta página usa los nombres en inglés.
 
 ### 2 — La organización Tienda Norte
 
@@ -108,8 +139,13 @@ En **Resources → Projects → Add**:
 | Source Control Branch/Tag/Commit | `main` |
 | Options | **Update Revision on Launch** marcada |
 
-Al guardar, AWX lanza la primera sincronización (un job de tipo *Project Sync*). En la lista de proyectos,
-el estado pasa a **Successful** y aparece el commit sincronizado en la columna de revisión. Desde ese
+**Source Control URL** y **Source Control Branch/Tag/Commit** aparecen al elegir `Git` como tipo. Al
+guardar, AWX lanza la primera sincronización (un job de tipo *Source Control Update*). En la lista de
+proyectos, el estado pasa a **Successful** y la columna **Revision** muestra el commit sincronizado:
+
+![Lista de proyectos con Portal Tienda Norte en estado Successful y su revisión](../img/M11-01-proyecto-sincronizado.png)
+
+Desde ese
 momento, AWX tiene su propia copia del repositorio; con **Update Revision on Launch**, cada job vuelve a
 sincronizar antes de ejecutar, así que lo que se despliega es siempre lo último de `main`.
 
@@ -145,13 +181,19 @@ print(json.dumps({"name": "Nodos del portal (ansible)", "organization": int(sys.
   | python3 -c 'import json,sys; c=json.load(sys.stdin); print(c["id"], c["name"], c["inputs"]["ssh_key_data"])'
 ```
 
-La respuesta solo trae el identificador, el nombre y `$encrypted$` en lugar de la clave: AWX la guarda
-cifrada y no la devuelve nunca, ni por API ni por la interfaz.
+```text
+3 Nodos del portal (ansible) $encrypted$
+```
+
+La respuesta solo trae el identificador (el número puede variar), el nombre y `$encrypted$` en lugar de la
+clave: AWX la guarda cifrada y no la devuelve nunca, ni por API ni por la interfaz.
 
 En **Resources → Credentials** aparece `Nodos del portal (ansible)`, de tipo **Machine**. Su detalle
 muestra **Username** `ansible`, **Privilege Escalation Method** `sudo` y el campo **SSH Private Key** como
-cifrado. Los playbooks ya llevan `become: true` y el usuario `ansible` tiene sudo sin contraseña, así que no
-hace falta contraseña de escalada.
+`Encrypted`. Los playbooks ya llevan `become: true` y el usuario `ansible` tiene sudo sin contraseña, así que
+no hace falta contraseña de escalada.
+
+![Detalle de la credencial Machine con la clave SSH como Encrypted](../img/M11-01-credencial-machine.png)
 
 > [!TIP]
 > Desde la interfaz, la misma credencial se crea en **Resources → Credentials → Add** con **Credential
@@ -171,6 +213,12 @@ En **Resources → Inventories → Add → Add inventory** se crea **Name** `Por
 | Project | `Portal Tienda Norte` |
 | Inventory file | `proyecto/inventories/prod/hosts.yml` |
 | Update options | **Overwrite** y **Update on launch** marcadas |
+
+El desplegable de **Inventory file** no ofrece `proyecto/inventories/prod/hosts.yml`: AWX lo toma por un
+playbook (tiene la clave `hosts`) y solo lista otros ficheros del repositorio. Se escribe la ruta en el campo
+y se elige la opción **Set source path to "proyecto/inventories/prod/hosts.yml"**:
+
+![Formulario de la fuente con la ruta escrita y la opción Set source path to](../img/M11-01-fuente-inventario.png)
 
 Al guardar y pulsar **Sync**, AWX ejecuta `ansible-inventory` sobre ese fichero. Es lo mismo que se ve en el
 terminal con:
@@ -193,7 +241,11 @@ ansible-inventory -i proyecto/inventories/prod/hosts.yml --graph
 ```
 
 Tras la sincronización, la pestaña **Hosts** del inventario lista `prod-db1`, `prod-lb1`, `prod-web1` y
-`prod-web2`, y **Groups** muestra `web`, `lb` y `db`. Las variables de `group_vars/all.yml`
+`prod-web2`, y **Groups** muestra `web`, `lb` y `db`:
+
+![Pestaña Hosts del inventario Portal prod con los cuatro nodos importados](../img/M11-01-inventario-hosts.png)
+
+Las variables de `group_vars/all.yml`
 (`portal_entorno: prod`, `portal_version: "1.0.0"`, `portal_color`, `portal_db_host`) quedan como variables
 del inventario, y `host_vars/prod-web2.yml` como variables del host `prod-web2`:
 
@@ -231,9 +283,12 @@ En **Resources → Templates → Add → Add job template**:
 | Job Type | `Run` |
 | Inventory | `Portal prod` |
 | Project | `Portal Tienda Norte` |
-| Playbook | `proyecto/deploy.yml` (el desplegable lista los playbooks que AWX encuentra en el proyecto) |
+| Playbook | `proyecto/deploy.yml` |
 | Credentials | `Nodos del portal (ansible)` |
-| Execution Environment | el que AWX trae por defecto |
+| Execution Environment | vacío: se usa el que AWX trae por defecto, **AWX EE (latest)** |
+
+El desplegable de **Playbook** lista todos los playbooks del repositorio, también los de `partidas/`;
+escribiendo `proyecto/deploy.yml` en el campo se filtra la lista.
 
 Tras **Save**, en la pestaña **Survey** de la plantilla se añade una pregunta con **Add**:
 
@@ -250,6 +305,8 @@ Con la encuesta activada (interruptor **Survey Enabled**), quien lance la planti
 lista cerrada. La respuesta llega al playbook como variable extra, igual que `-e portal_version=1.1.0` en
 `make deploy`, y por eso pesa más que el `portal_version: "1.0.0"` de `group_vars`.
 
+![Pestaña Survey de la plantilla con Survey Enabled y la pregunta Versión del portal](../img/M11-01-encuesta.png)
+
 > [!NOTE]
 > Sin encuesta, el mismo efecto se consigue con `portal_version: "1.1.0"` en el campo **Variables** de la
 > plantilla y la casilla **Prompt on launch** marcada, para poder cambiarla al lanzar. La encuesta es más
@@ -261,8 +318,10 @@ El botón **Launch** de la plantilla abre la encuesta; con `1.1.0` elegida, **Ne
 **Launch** arranca el job. La página del job tiene dos pestañas:
 
 - **Output**: la salida de `ansible-playbook` según se produce. Es la misma que en el terminal, porque es el
-  mismo playbook (el texto de los errores puede variar con la versión de ansible-core del execution
-  environment):
+  mismo playbook. Empieza con `Identity added` (la clave de la credencial cargada en el agente SSH del job) y
+  con avisos propios del execution environment, que lleva otra versión de ansible-core (2.18 al escribir
+  esta página): una deprecación de `ANSIBLE_COLLECTIONS_PATHS` y el aviso del intérprete de Python de cada
+  nodo. Después, lo conocido:
 
   ```text
   PLAY [Desplegar el portal 1.1.0] ***********************************************
@@ -284,13 +343,16 @@ El botón **Launch** de la plantilla abre la encuesta; con `1.1.0` elegida, **Ne
   …
   PLAY RECAP *********************************************************************
   prod-web1                  : ok=13   changed=8    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-  prod-web2                  : ok=13   changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+  prod-web2                  : ok=13   changed=8    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
   ```
 
-  Encima de la salida, un resumen con el número de plays, tareas y hosts, y el tiempo transcurrido.
+  Encima de la salida, un resumen con el número de plays, tareas y hosts, y el tiempo transcurrido:
+
+  ![Salida del job Desplegar portal en estado Successful con el PLAY RECAP de los dos nodos web](../img/M11-01-job-salida.png)
+
 - **Details**: estado (**Successful**), quién lo lanzó (**Launched By** `admin`), plantilla, inventario,
   proyecto y **Revision** (el commit de `main` que se ejecutó), playbook, credencial, execution environment y
-  las **Extra Variables** con `portal_version: 1.1.0`.
+  las **Variables** con `portal_version: 1.1.0`.
 
 Cada línea de la salida es un **evento** guardado en la base de datos de AWX. Al pulsar sobre una línea
 como `changed: [prod-web1 -> prod-lb1]` se abre el detalle del host para esa tarea: módulo, resultado y el
@@ -340,9 +402,14 @@ PLAY RECAP *********************************************************************
 prod-web1                  : ok=13   changed=9    unreachable=0    failed=1    skipped=0    rescued=1    ignored=0
 ```
 
+![Final de la salida del job fallido: vuelta a la release anterior, nodo devuelto al balanceador y PLAY RECAP con rescued=1](../img/M11-01-job-fallido.png)
+
 La diferencia con el terminal es que este fallo no se pierde al cerrar la pantalla: en **Views → Jobs**
-quedan los dos jobs, uno **Successful** y otro **Failed**, con su salida completa, la versión pedida y el
-commit ejecutado. `curl -s localhost:8083/estado.json` sigue diciendo `"version": "1.1.0"`.
+quedan los dos despliegues, uno **Successful** y otro **Failed**, con su salida completa, la versión pedida y
+el commit ejecutado. La lista incluye también los jobs de sincronización (**Source Control Update** del
+proyecto e **Inventory Sync** del inventario) que lanzan las casillas **Update Revision on Launch** y
+**Update on launch** antes de cada despliegue. `curl -s localhost:8083/estado.json` sigue diciendo
+`"version": "1.1.0"`.
 
 ### 9 — Un equipo que puede lanzar, pero no cambiar
 
@@ -368,18 +435,26 @@ menú es el mismo, pero el contenido no:
 | En **Credentials**, nada | No tiene permiso sobre la credencial: la usa a través de la plantilla, pero no puede verla ni reutilizarla en otra |
 | Puede lanzar y elegir versión en la encuesta | Es justo lo que se le ha concedido |
 
+![Lista de plantillas vista por guardia: solo Desplegar portal, con el botón de lanzar](../img/M11-01-guardia-plantillas.png)
+
 `guardia` lanza la plantilla con `1.0.0` y el job aparece en su lista de **Jobs** y en la de `admin`.
 
 ### 10 — Auditoría: quién lanzó qué y quién cambió qué
 
 De vuelta como `admin`:
 
-- **Views → Jobs** lista los tres despliegues. En el detalle de cada uno, **Launched By** dice `admin` o
-  `guardia`, y **Extra Variables** la versión que se pidió. Es la respuesta a «¿quién desplegó la 1.2.0 y
-  qué pasó en `prod-web1`?».
+- **Views → Jobs**, buscando `Desplegar` por nombre, lista los tres despliegues. En el detalle de cada uno,
+  **Launched By** dice `admin` o `guardia`, y **Variables** la versión que se pidió. Es la respuesta a
+  «¿quién desplegó la 1.2.0 y qué pasó en `prod-web1`?».
+
+  ![Lista de jobs filtrada por Desplegar con dos Successful y uno Failed](../img/M11-01-jobs.png)
+
 - **Views → Activity Stream** registra los cambios de configuración: quién creó la organización, el
-  proyecto, la credencial y la plantilla, quién añadió la encuesta y quién dio a `Operación portal` el rol
-  **Execute**. Cada entrada tiene fecha, usuario que la inició y el detalle del cambio.
+  proyecto, la credencial y la plantilla, quién añadió la encuesta, quién metió a `guardia` en el equipo y
+  quién dio a `Operación portal` el rol **Execute**, además de los jobs que lanzó cada usuario. Cada entrada
+  tiene fecha, usuario que la inició (**Initiated by**) y, con la lupa, el detalle del cambio.
+
+  ![Activity Stream con el job creado por guardia y las asociaciones de guardia al equipo y a la organización](../img/M11-01-activity-stream.png)
 
 La misma información está en la API, lista para un informe o una herramienta de auditoría:
 
@@ -400,12 +475,14 @@ Cada línea muestra el número de job, la plantilla, el estado, quién lo lanzó
 | `scripts/awx-up.sh` dice `kind: command not found` | Se lanzó en el Codespace normal del curso | Crear el Codespace con la configuración **Ansible — Tienda Norte + AWX (demo M11)** |
 | `scripts/awx-up.sh` se queda esperando y los pods de AWX siguen en `Pending` | Codespace con menos de 4 núcleos y 16 GB | Crear el Codespace de AWX con **New with options…** y esa configuración |
 | La sincronización del proyecto falla | URL mal copiada, fork privado o rama inexistente | Revisar **Source Control URL** y **Branch**; el fork debe ser público |
-| `proyecto/inventories/prod/hosts.yml` o `proyecto/deploy.yml` no aparecen en los desplegables | `proyecto/` no está subido a la rama del proyecto, o el proyecto no se ha vuelto a sincronizar | `git push` y botón de sincronizar del proyecto |
+| `proyecto/inventories/prod/hosts.yml` no aparece en **Inventory file** | AWX lo lista como playbook, no como inventario | Escribir la ruta y elegir **Set source path to "…"** |
+| `proyecto/deploy.yml` no aparece en **Playbook** | `proyecto/` no está subido a la rama del proyecto, o el proyecto no se ha vuelto a sincronizar | `git push` y botón de sincronizar del proyecto |
+| El job falla en `portal_lb` con `Destination directory /etc/nginx/sites-available does not exist` | Los nodos se recrearon después de `scripts/partida.sh m11` y están vacíos | Volver a lanzar `scripts/partida.sh m11` y relanzar la plantilla |
 | El job termina con `UNREACHABLE` y `Could not resolve hostname` | El clúster no resuelve los nombres de los nodos (red o DNS de kind) | Volver a lanzar `scripts/awx-up.sh`: reconecta el nodo de kind a la red y revisa CoreDNS |
 | El job termina con `Permission denied (publickey)` | La credencial no tiene la clave correcta o el usuario no es `ansible` | Revisar **Username** y volver a cargar la clave de `~/.ssh/curso-ansible/curso_ansible` |
 | El job falla con `Host key verification failed` | La comprobación de claves de host está activa en AWX | Añadir `ANSIBLE_HOST_KEY_CHECKING: "False"` en las variables de entorno de los jobs (**Settings → Jobs settings → Extra Environment Variables**) |
-| El login de AWX falla con un error de CSRF al abrirlo por la URL del Codespace | AWX no reconoce el dominio `*.app.github.dev` como origen de confianza | Probar desde el reenvío local (`http://localhost:8043`) o añadir ese origen a la configuración de AWX |
-| `site.yml` falla en `prod-db1` con `couldn't resolve module/action 'community.postgresql…'` | El execution environment por defecto no trae esa colección | Declararla en un `collections/requirements.yml` del proyecto o usar un EE que la incluya; `deploy.yml` no la necesita |
+| El login de AWX falla con `CSRF verification failed` | AWX se abrió desde un dominio que no es el suyo ni `https://*.app.github.dev`, el único que `infra/awx/awx.yaml` declara de confianza | Abrir AWX desde la pestaña **Puertos**, puerto 8043 |
+| `site.yml` falla en `prod-db1` con `couldn't resolve module/action 'community.postgresql…'` | El execution environment por defecto (AWX EE) solo trae `ansible.posix` | Declararla en un `collections/requirements.yml` del proyecto o usar un EE que la incluya; `deploy.yml` no la necesita |
 
 ## Qué queda visto
 

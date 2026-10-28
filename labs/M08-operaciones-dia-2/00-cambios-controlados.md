@@ -2,10 +2,30 @@
 
 [← Página anterior](README.md) · [Siguiente página →](01-lab-parcheo.md)
 
-Seguridad de Tienda Norte ha pasado una auditoría al portal de pedidos y ha abierto una petición: los servidores
-web de producción anuncian la versión exacta de nginx en la cabecera `Server`, y eso le da pistas a un atacante.
-Hay que ocultarla con `server_tokens off`. Esta demostración sigue el cambio de principio a fin, tal como se lleva
-a producción: se simula, se aplica en un nodo, se comprueba, se extiende al resto y se deja preparada la vuelta atrás.
+Una auditoría de seguridad ha detectado que los servidores web de producción del portal de Tienda Norte
+anuncian la versión exacta de nginx en la cabecera `Server`. Esta demostración lleva a producción el cambio
+que la oculta, `server_tokens off`.
+
+## Qué se va a ver
+
+**Qué se hace**
+
+1. Se comprueba la situación de partida.
+2. Se cambia el rol, con copia de seguridad del fichero.
+3. Se simula el cambio contra producción.
+4. Se aplica en un nodo canario y se comprueba.
+5. Se extiende al resto de nodos.
+6. Se cierra el cambio.
+
+**Objetivos**
+
+- Seguir el ciclo de un cambio en producción: simular, aplicar en un nodo, comprobar y extender.
+- Dejar preparada la vuelta atrás.
+
+**Conclusiones**
+
+- Un cambio en prod se hace en el proyecto, no en el nodo, y se ve antes de aplicarlo.
+- Un canario limita el daño si algo sale mal, y un check final sin cambios confirma el estado.
 
 ## Punto de partida
 

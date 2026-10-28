@@ -1,6 +1,6 @@
 # M02 — Inventarios
 
-[← Página anterior](../M01-fundamentos-arquitectura/03-lab-primer-playbook.md) · [Siguiente página →](00-inventario-estatico.md)
+[← Página anterior](../M01-fundamentos-arquitectura/04-lab-primer-playbook.md) · [Siguiente página →](00-inventario-estatico.md)
 
 El inventario es la descripción de la infraestructura que gestiona Ansible: qué nodos hay, cómo se agrupan y
 qué valores distinguen a cada uno. Una lista plana de nombres sirve para empezar, pero no dice qué hace cada
