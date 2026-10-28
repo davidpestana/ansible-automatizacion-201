@@ -46,3 +46,7 @@
   ansible.builtin.service:
     name: nginx
     state: started
+
+- name: Instalar herramientas de diagnóstico
+  apt:
+    name: htop
