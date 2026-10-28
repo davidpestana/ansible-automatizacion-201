@@ -1,0 +1,49 @@
+{
+  "name": "Ansible — Tienda Norte",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "disableIp6tables": true
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb"
+  },
+  "forwardPorts": [
+    8080,
+    8081,
+    8082
+  ],
+  "portsAttributes": {
+    "8080": {
+      "label": "Portal prod (balanceador)"
+    },
+    "8081": {
+      "label": "Portal dev"
+    },
+    "8082": {
+      "label": "Portal pre"
+    }
+  },
+  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt",
+  "postStartCommand": "bash scripts/red-docker-codespace.sh || true; bash scripts/nodos.sh up || true",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.ansible",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.associations": {
+          "*.yml": "ansible"
+        }
+      }
+    }
+  }
+}

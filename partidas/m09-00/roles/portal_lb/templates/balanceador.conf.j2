@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+upstream portal {
+    zone portal 64k;
+{% for web in portal_lb_backends %}
+    server {{ web }}:80{{ ' down' if web in portal_lb_fuera else '' }};
+{% endfor %}
+}
+
+server {
+    listen 80 default_server;
+    location / {
+        proxy_pass http://portal;
+        add_header X-Servidor $upstream_addr always;
+    }
+}

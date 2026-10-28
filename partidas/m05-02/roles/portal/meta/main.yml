@@ -1,0 +1,9 @@
+galaxy_info:
+  author: Operaciones Tienda Norte
+  description: Servidor web del portal de pedidos (nginx + release estática)
+  license: MIT
+  min_ansible_version: "2.18"
+  platforms:
+    - name: Debian
+      versions: [trixie]
+dependencies: []

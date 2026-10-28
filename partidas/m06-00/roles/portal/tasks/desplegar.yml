@@ -1,0 +1,23 @@
+- name: Crear la carpeta de la release
+  ansible.builtin.file:
+    path: "{{ portal_raiz }}/releases/{{ portal_version }}"
+    state: directory
+    mode: "0755"
+
+- name: Copiar la release {{ portal_version }}
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/app/releases/{{ portal_version }}/"
+    dest: "{{ portal_raiz }}/releases/{{ portal_version }}/"
+    mode: "0644"
+
+- name: Apuntar current a la release {{ portal_version }}
+  ansible.builtin.file:
+    src: "{{ portal_raiz }}/releases/{{ portal_version }}"
+    dest: "{{ portal_raiz }}/current"
+    state: link
+
+- name: Publicar el estado del nodo
+  ansible.builtin.template:
+    src: estado.json.j2
+    dest: "{{ portal_raiz }}/releases/{{ portal_version }}/estado.json"
+    mode: "0644"

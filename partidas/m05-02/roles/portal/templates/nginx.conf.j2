@@ -1,0 +1,18 @@
+# {{ ansible_managed }}
+user www-data;
+worker_processes {{ ansible_facts['processor_vcpus'] | default(1) }};
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+    worker_connections {{ portal_worker_connections }};
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    sendfile on;
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+    include /etc/nginx/sites-enabled/*;
+}

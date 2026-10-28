@@ -1,0 +1,14 @@
+- name: Actualizar los servidores del balanceador
+  ansible.builtin.template:
+    src: balanceador.conf.j2
+    dest: /etc/nginx/sites-available/default
+    mode: "0644"
+  register: portal_lb_conf
+
+# Sin handler a propósito: deploy.yml incluye este fichero con delegate_to al balanceador,
+# y un handler se ejecutaría en el nodo web que lo notifica, no en el balanceador.
+- name: Recargar el balanceador  # noqa: no-handler
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded
+  when: portal_lb_conf is changed

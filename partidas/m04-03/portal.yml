@@ -1,0 +1,67 @@
+- name: Portal de pedidos en los servidores web
+  hosts: web
+  become: true
+  vars:
+    portal_puerto: 80
+    portal_raiz: /srv/portal
+    portal_db_host: ""
+  tasks:
+    - name: Instalar nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Configurar el sitio del portal
+      ansible.builtin.template:
+        src: portal.conf.j2
+        dest: /etc/nginx/sites-available/portal
+        mode: "0644"
+      register: portal_sitio_conf
+
+    - name: Activar el sitio del portal
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/portal
+        dest: /etc/nginx/sites-enabled/portal
+        state: link
+
+    - name: Quitar el sitio por defecto
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Crear la carpeta de la release
+      ansible.builtin.file:
+        path: "{{ portal_raiz }}/releases/{{ portal_version }}"
+        state: directory
+        mode: "0755"
+
+    - name: Copiar la release {{ portal_version }}
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/app/releases/{{ portal_version }}/"
+        dest: "{{ portal_raiz }}/releases/{{ portal_version }}/"
+        mode: "0644"
+
+    - name: Apuntar current a la release {{ portal_version }}
+      ansible.builtin.file:
+        src: "{{ portal_raiz }}/releases/{{ portal_version }}"
+        dest: "{{ portal_raiz }}/current"
+        state: link
+
+    - name: Publicar el estado del nodo
+      ansible.builtin.template:
+        src: estado.json.j2
+        dest: "{{ portal_raiz }}/releases/{{ portal_version }}/estado.json"
+        mode: "0644"
+
+    - name: Arrancar nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+
+    - name: Recargar nginx si ha cambiado el sitio
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+      when: portal_sitio_conf is changed

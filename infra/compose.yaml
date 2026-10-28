@@ -1,0 +1,83 @@
+# Nodos del portal de Tienda Norte. Los levanta scripts/nodos.sh (no hace falta usar compose a mano).
+name: tienda-norte
+
+x-nodo: &nodo
+  # Imagen construida por scripts/nodos.sh desde infra/nodo/ (una sola vez para los seis nodos)
+  image: tienda-norte/nodo:1
+  pull_policy: never
+  init: true
+  restart: unless-stopped
+  volumes:
+    - ${CLAVES_DIR:-~/.ssh/curso-ansible}:/run/claves:ro
+
+services:
+  dev-web1:
+    <<: *nodo
+    hostname: dev-web1
+    container_name: dev-web1
+    labels:
+      tienda-norte.entorno: dev
+      tienda-norte.rol: web
+    networks:
+      portal: {ipv4_address: 172.30.0.11}
+    ports:
+      - "8081:80"
+  pre-web1:
+    <<: *nodo
+    hostname: pre-web1
+    container_name: pre-web1
+    labels:
+      tienda-norte.entorno: pre
+      tienda-norte.rol: web
+    networks:
+      portal: {ipv4_address: 172.30.0.12}
+    ports:
+      - "8082:80"
+  prod-lb1:
+    <<: *nodo
+    hostname: prod-lb1
+    container_name: prod-lb1
+    labels:
+      tienda-norte.entorno: prod
+      tienda-norte.rol: lb
+    networks:
+      portal: {ipv4_address: 172.30.0.20}
+    ports:
+      - "8080:80"
+  prod-web1:
+    <<: *nodo
+    hostname: prod-web1
+    container_name: prod-web1
+    labels:
+      tienda-norte.entorno: prod
+      tienda-norte.rol: web
+    networks:
+      portal: {ipv4_address: 172.30.0.21}
+    ports:
+      - "8083:80"
+  prod-web2:
+    <<: *nodo
+    hostname: prod-web2
+    container_name: prod-web2
+    labels:
+      tienda-norte.entorno: prod
+      tienda-norte.rol: web
+    networks:
+      portal: {ipv4_address: 172.30.0.22}
+    ports:
+      - "8084:80"
+  prod-db1:
+    <<: *nodo
+    hostname: prod-db1
+    container_name: prod-db1
+    labels:
+      tienda-norte.entorno: prod
+      tienda-norte.rol: db
+    networks:
+      portal: {ipv4_address: 172.30.0.30}
+
+networks:
+  portal:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

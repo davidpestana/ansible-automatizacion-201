@@ -1,0 +1,1 @@
+Release 1.2.0: se empaquetó sin index.html por error (lo detecta la verificación del despliegue).

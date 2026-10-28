@@ -1,0 +1,5 @@
+- name: Balanceador del portal
+  hosts: lb
+  become: true
+  roles:
+    - portal_lb

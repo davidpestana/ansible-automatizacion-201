@@ -1,0 +1,62 @@
+- name: Instalar nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  tags: [paquetes]
+
+- name: Configurar nginx (nginx.conf)
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    mode: "0644"
+    validate: nginx -t -c %s
+  notify: Recargar nginx
+  tags: [config]
+
+- name: Configurar el sitio del portal
+  ansible.builtin.template:
+    src: portal.conf.j2
+    dest: /etc/nginx/sites-available/portal
+    mode: "0644"
+  notify: Recargar nginx
+  tags: [config]
+
+- name: Activar el sitio del portal
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/portal
+    dest: /etc/nginx/sites-enabled/portal
+    state: link
+  notify: Recargar nginx
+  tags: [config]
+
+- name: Quitar el sitio por defecto
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Recargar nginx
+  tags: [config]
+
+- name: Desplegar la release
+  ansible.builtin.import_tasks: desplegar.yml
+  tags: [despliegue]
+
+- name: Arrancar nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+
+- name: Comprobar la versión de nginx
+  command: nginx -v
+  register: portal_nginx_version
+
+- ansible.builtin.file:
+    path: "{{ portal_raiz }}/mantenimiento"
+    state: directory
+
+- name: Publicar la página de mantenimiento
+  ansible.builtin.copy:
+    content: "<h1>El portal de pedidos de Tienda Norte está en mantenimiento. Estamos publicando una nueva versión; vuelve a intentarlo en unos minutos o escribe a pedidos@tienda-norte.example.</h1>\n"
+    dest: "{{ portal_raiz }}/mantenimiento/index.html"
+  when: mantenimiento_activo

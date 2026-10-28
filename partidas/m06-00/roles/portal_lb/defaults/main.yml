@@ -1,0 +1,2 @@
+portal_lb_backends: "{{ groups['web'] | default([]) }}"
+portal_lb_fuera: []

@@ -1,0 +1,40 @@
+- name: Flujo de una ejecución en los web del portal
+  hosts: web
+  become: true
+  vars:
+    flujo_utilidades:
+      - jq
+      - tree
+  tasks:
+    - name: Instalar utilidades de operaciones
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      loop: "{{ flujo_utilidades }}"
+
+    - name: Ocultar la versión de nginx en las respuestas
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-enabled/00-seguridad.conf
+        content: "server_tokens off;\n"
+        mode: "0644"
+      notify: Recargar nginx
+
+    - name: Marcar las respuestas de producción
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-enabled/00-entorno.conf
+        content: "add_header X-Entorno {{ portal_entorno }} always;\n"
+        mode: "0644"
+      when: portal_entorno == 'prod'
+      notify: Recargar nginx
+
+    - name: Comprobar que nginx sigue respondiendo
+      ansible.builtin.uri:
+        url: http://localhost/
+
+  handlers:
+    - name: Recargar nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded

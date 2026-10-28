@@ -1,0 +1,5 @@
+# Herramientas del nodo de control (Codespace y pipelines)
+ansible==13.8.0
+ansible-lint==26.9.0
+# Para el inventario dinámico de Docker (community.docker.docker_containers)
+requests==2.32.5

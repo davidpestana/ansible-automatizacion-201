@@ -1,0 +1,18 @@
+- name: Preparar los nodos del portal
+  hosts: all
+  become: true
+  tasks:
+    - name: Comprobar la conexión
+      ansible.builtin.ping:
+
+    - name: Crear la carpeta del portal
+      ansible.builtin.file:
+        path: /srv/portal
+        state: directory
+        mode: "0755"
+
+    - name: Dejar constancia de quién gestiona el nodo
+      ansible.builtin.copy:
+        dest: /etc/motd
+        content: "Nodo del portal de pedidos de Tienda Norte. Gestionado con Ansible.\n"
+        mode: "0644"

@@ -1,0 +1,27 @@
+# Acceso SSH a los nodos. Lo usa ansible.cfg (ssh_args = -F ../infra/ssh_config).
+# Desde proyecto/: ssh -F ../infra/ssh_config dev-web1
+
+Host dev-web1
+  HostName 172.30.0.11
+
+Host pre-web1
+  HostName 172.30.0.12
+
+Host prod-lb1
+  HostName 172.30.0.20
+
+Host prod-web1
+  HostName 172.30.0.21
+
+Host prod-web2
+  HostName 172.30.0.22
+
+Host prod-db1
+  HostName 172.30.0.30
+
+Host *
+  User ansible
+  IdentityFile ~/.ssh/curso-ansible/curso_ansible
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  LogLevel ERROR

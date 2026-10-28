@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Portal de pedidos — Tienda Norte</title>
+<style>body{font-family:sans-serif;margin:0}header{padding:1rem 2rem;color:#fff}main{padding:1rem 2rem}</style></head>
+<body>
+<header id="cab"><h1>Portal de pedidos — Tienda Norte</h1></header>
+<main>
+<p>Versión <strong>1.1.0</strong>. Nuevo: seguimiento de pedidos.</p>
+<p id="estado">Cargando estado…</p>
+</main>
+<script>
+fetch('/estado.json').then(r => r.json()).then(e => {
+  document.getElementById('cab').style.background = e.color;
+  document.getElementById('estado').textContent = 'Entorno ' + e.entorno + ' · servidor ' + e.host + ' · versión ' + e.version;
+});
+</script>
+</body>
+</html>

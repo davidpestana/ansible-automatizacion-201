@@ -1,0 +1,5 @@
+- name: Servidores web del portal
+  hosts: web
+  become: true
+  roles:
+    - portal

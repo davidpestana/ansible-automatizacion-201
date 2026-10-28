@@ -1,0 +1,14 @@
+- name: Instalar nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Arrancar nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+
+- name: Configurar el balanceador
+  ansible.builtin.import_tasks: balancear.yml

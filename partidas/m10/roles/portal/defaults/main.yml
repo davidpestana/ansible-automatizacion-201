@@ -1,0 +1,7 @@
+portal_entorno: dev
+portal_version: "1.0.0"
+portal_color: "#2563eb"
+portal_puerto: 80
+portal_raiz: /srv/portal
+portal_worker_connections: 768
+portal_db_host: ""

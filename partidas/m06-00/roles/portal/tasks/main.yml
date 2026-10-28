@@ -1,0 +1,46 @@
+- name: Instalar nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Configurar nginx (nginx.conf)
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    mode: "0644"
+    validate: nginx -t -c %s
+  register: portal_nginx_conf
+
+- name: Configurar el sitio del portal
+  ansible.builtin.template:
+    src: portal.conf.j2
+    dest: /etc/nginx/sites-available/portal
+    mode: "0644"
+  register: portal_sitio_conf
+
+- name: Activar el sitio del portal
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/portal
+    dest: /etc/nginx/sites-enabled/portal
+    state: link
+
+- name: Quitar el sitio por defecto
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Desplegar la release
+  ansible.builtin.import_tasks: desplegar.yml
+
+- name: Arrancar nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+
+- name: Recargar nginx si ha cambiado su configuración
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded
+  when: portal_nginx_conf is changed or portal_sitio_conf is changed

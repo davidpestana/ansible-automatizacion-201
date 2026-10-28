@@ -1,0 +1,59 @@
+# Despliegue escalonado: uno a uno, fuera del balanceador mientras se actualiza,
+# y vuelta a la release anterior si la verificación falla.
+- name: Desplegar el portal {{ portal_version }}
+  hosts: web
+  become: true
+  serial: 1
+  max_fail_percentage: 0
+  tasks:
+    - name: Leer la release actual
+      ansible.builtin.stat:
+        path: "{{ portal_raiz }}/current"
+      register: portal_actual
+
+    - name: Sacar el nodo del balanceador
+      ansible.builtin.include_role:
+        name: portal_lb
+        tasks_from: balancear
+        apply:
+          delegate_to: "{{ item }}"
+      vars:
+        portal_lb_fuera: ["{{ inventory_hostname }}"]
+      loop: "{{ groups['lb'] | default([]) }}"
+
+    - name: Desplegar y verificar
+      block:
+        - name: Desplegar la release
+          ansible.builtin.import_role:
+            name: portal
+            tasks_from: desplegar
+
+        - name: Verificar que el portal responde
+          ansible.builtin.uri:
+            url: "http://localhost/"
+            status_code: 200
+          register: portal_verificacion
+          until: portal_verificacion.status == 200
+          retries: 3
+          delay: 2
+      rescue:
+        - name: Volver a la release anterior
+          ansible.builtin.file:
+            src: "{{ portal_actual.stat.lnk_source }}"
+            dest: "{{ portal_raiz }}/current"
+            state: link
+          when: portal_actual.stat.islnk | default(false)
+
+        - name: Parar el despliegue
+          ansible.builtin.fail:
+            msg: >-
+              La release {{ portal_version }} no responde en {{ inventory_hostname }};
+              se ha vuelto a {{ portal_actual.stat.lnk_source | default('ninguna') | basename }}.
+      always:
+        - name: Devolver el nodo al balanceador
+          ansible.builtin.include_role:
+            name: portal_lb
+            tasks_from: balancear
+            apply:
+              delegate_to: "{{ item }}"
+          loop: "{{ groups['lb'] | default([]) }}"

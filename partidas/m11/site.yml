@@ -1,0 +1,6 @@
+- name: Base de datos
+  ansible.builtin.import_playbook: db.yml
+- name: Web
+  ansible.builtin.import_playbook: web.yml
+- name: Balanceador
+  ansible.builtin.import_playbook: lb.yml

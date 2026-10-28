@@ -1,0 +1,32 @@
+# Cómo se coordinan los nodos del portal: lo que descubre un play lo leen los siguientes.
+- name: Datos de la base de datos
+  hosts: db
+  gather_facts: false
+  tasks:
+    - name: Leer la versión de PostgreSQL
+      ansible.builtin.command: psql --version
+      register: orden_postgresql
+      changed_when: false
+
+- name: Las web miran a la base de datos y al balanceador
+  hosts: web
+  gather_facts: false
+  tasks:
+    - name: Anunciar la comprobación una sola vez
+      ansible.builtin.debug:
+        msg: "Comprobando {{ ansible_play_hosts | length }} web contra {{ groups['db'][0] }}"
+      run_once: true
+
+    - name: Leer lo que descubrió el play de la base de datos
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} usará {{ groups['db'][0] }}: {{ hostvars[groups['db'][0]]['orden_postgresql']['stdout'] }}"
+
+    - name: Pedir el estado de cada web desde el balanceador
+      ansible.builtin.command: curl -s -o /dev/null -w "%{http_code}" http://{{ inventory_hostname }}/estado.json
+      delegate_to: "{{ groups['lb'][0] }}"
+      register: orden_http
+      changed_when: false
+
+    - name: Mostrar lo que ve el balanceador
+      ansible.builtin.debug:
+        msg: "{{ groups['lb'][0] }} pide {{ inventory_hostname }}/estado.json: HTTP {{ orden_http.stdout }}"

@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+server {
+    listen {{ portal_puerto }} default_server;
+    server_name {{ inventory_hostname }};
+    root {{ portal_raiz }}/current;
+    index index.html;
+}

@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "name": "ansible-automatizacion-201",
+      "path": "/home/david/Cursos/ansible-automatizacion-201"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.git": true
+    }
+  }
+}

@@ -1,0 +1,8 @@
+# Clúster de un nodo para la demo de AWX. La web de AWX queda en http://localhost:8043.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 8043

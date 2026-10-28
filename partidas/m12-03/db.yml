@@ -1,0 +1,5 @@
+- name: Base de datos del portal
+  hosts: db
+  become: true
+  roles:
+    - portal_db

@@ -1,0 +1,50 @@
+- name: Instalar PostgreSQL
+  ansible.builtin.apt:
+    name: [postgresql, python3-psycopg2]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  tags: [paquetes]
+
+- name: Localizar la configuración de PostgreSQL
+  ansible.builtin.find:
+    paths: /etc/postgresql
+    patterns: postgresql.conf
+    recurse: true
+  register: portal_db_conf
+
+- name: Escuchar en la red del portal
+  ansible.builtin.lineinfile:
+    path: "{{ portal_db_conf.files[0].path }}"
+    regexp: "^#?listen_addresses"
+    line: "listen_addresses = '*'"
+  notify: Reiniciar PostgreSQL
+  tags: [config]
+
+- name: Permitir conexiones desde las web
+  ansible.builtin.lineinfile:
+    path: "{{ portal_db_conf.files[0].path | dirname }}/pg_hba.conf"
+    line: "host {{ portal_db_nombre }} {{ portal_db_usuario }} {{ portal_db_red }} scram-sha-256"
+  notify: Reiniciar PostgreSQL
+  tags: [config]
+
+- name: Arrancar PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+
+- name: Aplicar la configuración pendiente
+  ansible.builtin.meta: flush_handlers
+
+- name: Crear el usuario del portal
+  community.postgresql.postgresql_user:
+    name: "{{ portal_db_usuario }}"
+  become: true
+  become_user: postgres
+
+- name: Crear la base de datos de pedidos
+  community.postgresql.postgresql_db:
+    name: "{{ portal_db_nombre }}"
+    owner: "{{ portal_db_usuario }}"
+  become: true
+  become_user: postgres
