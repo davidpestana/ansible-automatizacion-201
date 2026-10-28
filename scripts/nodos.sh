@@ -38,7 +38,20 @@ imagen() {
   huella="$(cat "$RAIZ"/infra/nodo/* | sha256sum | cut -c1-16)"
   if [ "$(docker image inspect -f '{{index .Config.Labels "tienda-norte.huella"}}' "$IMAGEN" 2>/dev/null)" != "$huella" ]; then
     docker build -q --label "tienda-norte.huella=$huella" -t "$IMAGEN" "$RAIZ/infra/nodo" >/dev/null
+    IMAGEN_NUEVA=1
   fi
+}
+
+recrear() {
+  # Docker cambia el ID de la imagen en el primer reinicio del Codespace (migra su almacén) y Compose
+  # recrearía los nodos: solo se recrean si se reconstruyó la imagen o cambió infra/compose.yaml
+  [ -n "${IMAGEN_NUEVA:-}" ] && return 0
+  local n
+  for n in "${NODOS[@]}"; do
+    [ "$(docker inspect -f '{{index .Config.Labels "com.docker.compose.config-hash"}}' "$n" 2>/dev/null)" = \
+      "$("${COMPOSE[@]}" config --hash "$n" 2>/dev/null | awk '{print $2}')" ] || return 0
+  done
+  return 1
 }
 
 esperar_ssh() {
@@ -67,7 +80,8 @@ case "${1:-up}" in
     clave
     bash "$RAIZ/scripts/red-docker-codespace.sh" >/dev/null 2>&1 || true
     imagen
-    "${COMPOSE[@]}" up -d 2>&1 | grep -v -e '^ *$' || true
+    if recrear; then opciones=(); else opciones=(--no-recreate); fi
+    "${COMPOSE[@]}" up -d "${opciones[@]}" 2>&1 | grep -v -e '^ *$' || true
     # Los nodos instalan la clave pública al arrancar: si es nueva, se reinician (conservan su estado)
     if [ -n "${CLAVE_NUEVA:-}" ]; then "${COMPOSE[@]}" restart >/dev/null 2>&1; fi
     esperar_ssh; estado ;;
